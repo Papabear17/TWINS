@@ -1,0 +1,2104 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>TWINS — Platform Pelatihan Renang</title>
+    <link rel="icon" href="./logo.jpeg" type="image/jpeg" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Critical: hide app shell and prevent flash */
+      #appShell {
+        display: none;
+      }
+      #loginPage {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══════════ LOGIN PAGE ══════════ -->
+    <div id="loginPage" class="login-page">
+      <div class="login-card">
+        <div class="login-logo">
+          <img
+            src="./logo.jpeg"
+            alt="TWINS Logo"
+            class="login-logo-img"
+          />
+        </div>
+        <h2 class="login-title">Masuk ke TWINS</h2>
+        <p class="login-subtitle">Platform Pelatihan Renang</p>
+        <div class="login-form">
+          <div class="form-group">
+            <label>Email</label>
+            <input
+              id="loginEmail"
+              type="email"
+              placeholder="email@twins.id"
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              id="loginPassword"
+              type="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+          </div>
+          <p id="loginError" class="login-error hidden"></p>
+          <button class="login-btn" onclick="doLogin()">Masuk</button>
+        </div>
+        <p class="login-hint">Hubungi admin TWINS untuk mendapatkan akses.</p>
+      </div>
+    </div>
+
+    <!-- ══════════ FIREBASE LOADING SKELETON ══════════ -->
+    <div id="firebaseLoadingOverlay" style="display:none;position:fixed;inset:0;z-index:8888;background:var(--bg,#f0f6ff);flex-direction:column;align-items:center;justify-content:center;gap:18px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+        <img src="./logo.jpeg" alt="TWINS" style="width:56px;height:56px;border-radius:50%;object-fit:cover;box-shadow:0 2px 12px rgba(30,144,255,0.18);" />
+        <div style="font-size:1rem;font-weight:600;color:#1e90ff;letter-spacing:.03em">Menyinkronkan data…</div>
+        <div style="font-size:.8rem;color:#888">Terhubung ke Firebase Realtime Database</div>
+      </div>
+      <div style="width:220px;height:6px;background:#e2edf8;border-radius:99px;overflow:hidden;">
+        <div id="firebaseSyncBar" style="height:100%;width:0%;background:linear-gradient(90deg,#1e90ff,#63b3ed);border-radius:99px;transition:width 0.4s ease;animation:syncPulse 1.4s ease-in-out infinite;"></div>
+      </div>
+      <!-- Skeleton cards -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ APP SHELL ══════════ -->
+    <div id="appShell" class="app" style="display: none">
+      <!-- ── Sidebar ── -->
+      <aside id="sidebar" class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">
+            <img
+              src="./logo.jpeg"
+              alt="TWINS Logo"
+              class="brand-logo-img"
+            />
+          </div>
+          <div class="brand-text">
+            <h2>TWINS</h2>
+            <p id="sidebarRoleLabel">Admin</p>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Ringkasan</p>
+          <button
+            class="nav-btn active"
+            data-section="dashboard"
+            title="Dashboard"
+            onclick="showSection('dashboard')"
+          >
+            <span class="nav-icon">▪</span><span>Dashboard</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Operasional</p>
+          <button
+            class="nav-btn"
+            data-section="locations"
+            title="Lokasi & Slot"
+            onclick="showSection('locations')"
+          >
+            <span class="nav-icon">▪</span><span>Lokasi &amp; Slot</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="members"
+            title="Pendaftaran Member"
+            onclick="showSection('members')"
+          >
+            <span class="nav-icon">▪</span><span>Pendaftaran</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="schedule"
+            title="Jadwal Latihan"
+            onclick="showSection('schedule')"
+          >
+            <span class="nav-icon">▪</span><span>Jadwal Latihan</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="notes"
+            title="Catatan & Evaluasi"
+            onclick="showSection('notes')"
+          >
+            <span class="nav-icon">▪</span><span>Catatan &amp; Evaluasi</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="progress"
+            title="Progress Member"
+            onclick="showSection('progress')"
+          >
+            <span class="nav-icon">▪</span><span>Progress Member</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Administrasi</p>
+          <button
+            class="nav-btn"
+            data-section="payments"
+            title="Pembayaran"
+            onclick="showSection('payments')"
+          >
+            <span class="nav-icon">▪</span><span>Pembayaran</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="reports"
+            title="Laporan"
+            onclick="showSection('reports')"
+          >
+            <span class="nav-icon">▪</span><span>Laporan</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Konfigurasi</p>
+          <button
+            class="nav-btn admin-only"
+            data-section="settings"
+            title="Pengaturan (Admin)"
+            onclick="showSection('settings')"
+          >
+            <span class="nav-icon">▪</span><span>Pengaturan</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="orgchart"
+            title="Struktur Organisasi"
+            onclick="showSection('orgchart')"
+          >
+            <span class="nav-icon">▪</span><span>Struktur Organisasi</span>
+          </button>
+        </div>
+
+        <div class="nav-spacer"></div>
+        <div class="nav-divider"></div>
+
+        <button class="nav-btn nav-btn-logout" title="Keluar dari TWINS" onclick="doLogout()">
+          <span class="nav-icon">▪</span><span>Keluar</span>
+        </button>
+      </aside>
+      <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+        onclick="toggleMobileSidebar()"
+      ></div>
+
+      <!-- ── Main Content ── -->
+      <main class="main-content">
+        <header class="top-header">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <button
+              id="mobileMenuBtn"
+              class="mobile-menu-btn"
+              onclick="toggleMobileSidebar()"
+              style="
+                display: none;
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                color: var(--text);
+                cursor: pointer;
+              "
+            >
+              ☰
+            </button>
+            <div>
+              <p class="eyebrow">Platform Pelatihan Renang</p>
+              <h1 id="headerTitle">TWINS Dashboard</h1>
+            </div>
+          </div>
+          <div class="header-actions">
+            <span class="pill" id="headerMemberCount">— members</span>
+            <span class="pill" id="headerActiveSlots">— slots</span>
+            <span class="pill" id="headerRolePill">Admin</span>
+            <!-- Tombol buka website landing -->
+            <a href="landing.html" target="_blank" rel="noopener" class="pill pill-website" title="Buka halaman website publik">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Buka Website
+            </a>
+            <!-- Dark Mode toggle pindah ke sini -->
+            <button
+              class="theme-btn"
+              onclick="toggleTheme()"
+              title="Ganti tema"
+              aria-label="Toggle dark mode"
+            >
+              <svg
+                id="themeIconSun"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="16"
+                height="16"
+                style="display: none"
+              >
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+              <svg
+                id="themeIconMoon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="16"
+                height="16"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </button>
+            <div class="user-chip">
+              <div class="user-chip-avatar" id="userChipAvatar">A</div>
+              <span id="userChipName">Admin</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- ════ 1. DASHBOARD ════ -->
+        <section id="dashboardSection" class="content-section">
+          <!-- Notification banner -->
+          <div id="notifBanner" style="display: none" class="notif-banner">
+            <span id="notifText"></span>
+            <button onclick="showSection('payments')" class="notif-action">
+              Lihat Pembayaran
+            </button>
+            <button
+              onclick="
+                document.getElementById('notifBanner').style.display = 'none'
+              "
+              class="notif-close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p class="dashboard-eyebrow">Ringkasan Platform TWINS</p>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <p>Total Member Aktif</p>
+              <h2 id="statMembers">0</h2>
+              <span class="metric-change positive">Terdaftar</span>
+            </div>
+            <div class="metric-card">
+              <p>Pendapatan Bulan Ini</p>
+              <h2 id="statRevenue">Rp 0</h2>
+              <span class="metric-change positive">Pembayaran lunas</span>
+            </div>
+            <div class="metric-card">
+              <p>Slot Tersedia</p>
+              <h2 id="statSlots">0</h2>
+              <span class="metric-change">Dari semua lokasi</span>
+            </div>
+            <div class="metric-card">
+              <p>Tagihan Menunggak</p>
+              <h2 id="statOverdue">0</h2>
+              <span class="metric-change negative">Perlu tindak</span>
+            </div>
+          </div>
+
+          <div class="charts-row" style="margin-top: 4px">
+            <div class="card">
+              <h3>Member Terbaru</h3>
+              <div id="recentMembers"></div>
+            </div>
+            <div class="card">
+              <h3>Pembayaran Terakhir</h3>
+              <div id="recentPayments"></div>
+            </div>
+            <div class="card">
+              <h3>Slot per Lokasi</h3>
+              <div id="slotSummary"></div>
+            </div>
+          </div>
+
+          <!-- Grafik Performa -->
+          <div class="charts-row" style="margin-top: 4px">
+            <div class="card">
+              <h3>Pendapatan 6 Bulan Terakhir</h3>
+              <div style="position: relative; height: 240px">
+                <canvas id="revenueChartDash"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Status Pembayaran Bulan Ini</h3>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 28px;
+                  padding: 20px 8px;
+                  min-height: 200px;
+                  flex-wrap: wrap;
+                "
+              >
+                <canvas id="payStatusChart" style="width:160px;height:160px;flex-shrink:0;"></canvas>
+                <div id="payStatusLegend" style="font-size: 0.85rem; min-width: 100px;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════ 2. LOKASI & SLOT ════ -->
+        <section
+          id="locationsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Lokasi &amp; Ketersediaan Slot</h3>
+              <button class="admin-only" onclick="openLocationModal()">
+                + Tambah Lokasi
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="locationSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari lokasi..."
+                oninput="renderLocations()"
+              />
+              <select
+                id="locationFilter"
+                class="filter-select"
+                onchange="renderLocations()"
+              >
+                <option value="">Semua Status</option>
+                <option value="available">Ada Slot</option>
+                <option value="full">Penuh</option>
+              </select>
+            </div>
+            <div id="locationList"></div>
+          </div>
+        </section>
+
+        <!-- ════ 3. PENDAFTARAN MEMBER ════ -->
+        <section
+          id="membersSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Data Member</h3>
+              <button class="admin-only" onclick="openMemberModal()">
+                + Daftarkan Member
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="memberSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari nama atau nomor HP..."
+                oninput="renderMembers()"
+              />
+              <select
+                id="memberStatusFilter"
+                class="filter-select"
+                onchange="renderMembers()"
+              >
+                <option value="">Semua Status</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Menunggu Verifikasi Admin">
+                  Menunggu Verifikasi Admin
+                </option>
+                <option value="Tidak Aktif">Tidak Aktif</option>
+              </select>
+            </div>
+            <div id="memberList"></div>
+          </div>
+        </section>
+
+        <!-- ════ 4. PEMBAYARAN ════ -->
+        <section
+          id="paymentsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="metrics-grid" style="margin-bottom: 16px">
+            <div class="metric-card">
+              <p>Total Terkumpul</p>
+              <h2 id="payStatTotal">Rp 0</h2>
+              <span class="metric-change positive">Semua waktu</span>
+            </div>
+            <div class="metric-card">
+              <p>Bulan Ini</p>
+              <h2 id="payStatMonth">Rp 0</h2>
+              <span class="metric-change positive">Lunas</span>
+            </div>
+            <div class="metric-card">
+              <p>Menunggak</p>
+              <h2 id="payStatOverdue">0</h2>
+              <span class="metric-change negative">Belum bayar</span>
+            </div>
+            <div class="metric-card">
+              <p>Pendaftaran Baru</p>
+              <h2 id="payStatNew">0</h2>
+              <span class="metric-change">Bulan ini</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-head">
+              <h3>Riwayat Pembayaran</h3>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                  align-items: center;
+                "
+              >
+                <select
+                  id="payTypeFilter"
+                  class="filter-select"
+                  onchange="renderPayments()"
+                >
+                  <option value="">Semua Tipe</option>
+                  <option value="Pendaftaran">Pendaftaran</option>
+                  <option value="Bulanan">Bulanan</option>
+                </select>
+                <select
+                  id="payStatusFilter"
+                  class="filter-select"
+                  onchange="renderPayments()"
+                >
+                  <option value="">Semua Status</option>
+                  <option value="Lunas">Lunas</option>
+                  <option value="Menunggak">Menunggak</option>
+                </select>
+                <button onclick="openPaymentModal()">+ Catat Pembayaran</button>
+                <button onclick="exportPaymentCSV()" class="btn-outline">
+                  Export CSV
+                </button>
+                <button onclick="exportPaymentPDF()" class="btn-outline">
+                  Export PDF
+                </button>
+              </div>
+            </div>
+            <div id="paymentList"></div>
+          </div>
+        </section>
+
+        <!-- ════ 5. JADWAL LATIHAN ════ -->
+        <section
+          id="scheduleSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Jadwal Latihan Member</h3>
+              <button onclick="openScheduleModal()">+ Tambah Jadwal</button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="scheduleSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari nama member..."
+                oninput="renderSchedules()"
+              />
+              <select
+                id="scheduleDayFilter"
+                class="filter-select"
+                onchange="renderSchedules()"
+              >
+                <option value="">Semua Hari</option>
+                <option value="Senin">Senin</option>
+                <option value="Selasa">Selasa</option>
+                <option value="Rabu">Rabu</option>
+                <option value="Kamis">Kamis</option>
+                <option value="Jumat">Jumat</option>
+                <option value="Sabtu">Sabtu</option>
+                <option value="Minggu">Minggu</option>
+              </select>
+            </div>
+            <div id="scheduleList"></div>
+          </div>
+        </section>
+
+        <!-- ════ 6. CATATAN & EVALUASI ════ -->
+        <section
+          id="notesSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Catatan &amp; Evaluasi Sesi</h3>
+              <button class="admin-only" onclick="openNoteModal()">
+                + Tambah Catatan
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="noteSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari nama member atau catatan..."
+                oninput="renderNotes()"
+              />
+              <select
+                id="noteTypeFilter"
+                class="filter-select"
+                onchange="renderNotes()"
+              >
+                <option value="">Semua Tipe</option>
+                <option value="Catatan">Catatan Sesi</option>
+                <option value="Evaluasi">Evaluasi</option>
+                <option value="Progress">Progress</option>
+              </select>
+            </div>
+            <div id="noteList"></div>
+          </div>
+        </section>
+
+        <!-- ════ 7A. PROGRESS MEMBER ════ -->
+        <section
+          id="progressSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card" style="margin-bottom: 16px">
+            <div class="section-head">
+              <h3>Progress Member</h3>
+              <select
+                id="progressMemberFilter"
+                class="filter-select"
+                onchange="renderProgress()"
+                style="min-width: 200px"
+              >
+                <option value="">— Pilih Member —</option>
+              </select>
+            </div>
+          </div>
+          <div id="progressContent"></div>
+        </section>
+
+        <!-- ════ 7B. LAPORAN ════ -->
+        <section
+          id="reportsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <!-- KPI Summary -->
+          <div class="metrics-grid" style="margin-bottom: 16px">
+            <div class="metric-card">
+              <p>Total Member</p>
+              <h2 id="rptMembers">0</h2>
+              <span class="metric-change positive">Aktif</span>
+            </div>
+            <div class="metric-card">
+              <p>Sesi Bulan Ini</p>
+              <h2 id="rptSessions">0</h2>
+              <span class="metric-change">Jadwal</span>
+            </div>
+            <div class="metric-card">
+              <p>Pendapatan Bulan Ini</p>
+              <h2 id="rptRevenue">Rp 0</h2>
+              <span class="metric-change positive">Lunas</span>
+            </div>
+            <div class="metric-card">
+              <p>Menunggak</p>
+              <h2 id="rptOverdue">0</h2>
+              <span class="metric-change negative">Perlu tindak</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-head">
+              <h3>Laporan Pembayaran</h3>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                  align-items: center;
+                "
+              >
+                <select
+                  id="rptPeriodFilter"
+                  class="filter-select"
+                  onchange="renderReports()"
+                >
+                  <option value="">Semua Periode</option>
+                  <option value="thisMonth">Bulan Ini</option>
+                  <option value="lastMonth">Bulan Lalu</option>
+                  <option value="thisYear">Tahun Ini</option>
+                </select>
+                <select
+                  id="rptCoachFilter"
+                  class="filter-select"
+                  onchange="renderReports()"
+                >
+                  <option value="">Semua Coach</option>
+                </select>
+                <button onclick="exportReportPDF()" class="btn-outline">
+                  Export PDF
+                </button>
+                <button onclick="exportReportCSV()" class="btn-outline">
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            <div id="reportSummaryTable"></div>
+          </div>
+        </section>
+
+        <!-- ════ 7. PENGATURAN (ADMIN ONLY) ════ -->
+        <section
+          id="settingsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="settings-hero">
+            <div>
+              <p class="settings-hero-eyebrow">Kontrol Platform</p>
+              <h2>Pengaturan sekarang dipisah per kelompok</h2>
+              <p class="settings-hero-copy">
+                Akun, biaya, pembayaran, identitas brand, dan media landing
+                dipisah agar tidak numpuk, lebih mudah dicari, dan lebih nyaman
+                diedit.
+              </p>
+            </div>
+            <div class="settings-hero-chips">
+              <span class="settings-chip">Akun &amp; Role</span>
+              <span class="settings-chip">Keuangan</span>
+              <span class="settings-chip">Brand &amp; Landing</span>
+            </div>
+          </div>
+
+          <div class="settings-tabs-nav">
+            <button
+              class="stab-btn active"
+              data-stab="dashboard"
+              onclick="switchSettingsTab('dashboard')"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              Dashboard &amp; Operasional
+            </button>
+            <button
+              class="stab-btn"
+              data-stab="web"
+              onclick="switchSettingsTab('web')"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+              Website &amp; Landing Page
+            </button>
+          </div>
+
+          <div id="stabDashboard" class="stab-panel">
+            <div class="settings-stack">
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 1</p>
+                    <h3>Akun, paket, dan sistem inti</h3>
+                  </div>
+                  <p>
+                    Bagian ini fokus untuk data admin, harga paket, dan
+                    konfigurasi dasar dashboard.
+                  </p>
+                </div>
+                <div class="settings-grid settings-grid--fit">
+                  <div class="card">
+                    <div class="section-head">
+                      <h3>Akun &amp; Pengguna Sistem</h3>
+                      <button onclick="openAdminUserModal()">
+                        + Tambah Akun
+                      </button>
+                    </div>
+                    <div id="adminUserList"></div>
+                  </div>
+                  <div class="card">
+                    <div class="section-head">
+                      <h3>Paket Membership</h3>
+                      <button onclick="openPackageModal()">
+                        + Tambah Paket
+                      </button>
+                    </div>
+                    <div id="packageList"></div>
+                  </div>
+                  <div class="card settings-info-card">
+                    <h3>Konfigurasi Sistem Dashboard</h3>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Nama Aplikasi</label
+                          ><input id="cfgAppName" value="Twins Swimming Club" />
+                        </div>
+                        <div class="form-group">
+                          <label>Kontak Admin (Email)</label
+                          ><input
+                            id="cfgContact"
+                            value="twinsswimmingclub@gmail.com"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Biaya Pendaftaran (Rp)</label
+                          ><input id="cfgRegFee" type="number" value="100000" />
+                        </div>
+                        <div class="form-group">
+                          <label>Batas Hari Jatuh Tempo</label
+                          ><input
+                            id="cfgDueDay"
+                            type="number"
+                            value="5"
+                            min="1"
+                            max="28"
+                          />
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: flex-end;
+                          margin-top: 8px;
+                        "
+                      >
+                        <button onclick="saveConfig()">
+                          Simpan Konfigurasi Dasar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 2</p>
+                    <h3>Pembayaran, QRIS, dan WhatsApp</h3>
+                  </div>
+                  <p>
+                    Seluruh data untuk form pendaftaran, keamanan pembayaran,
+                    dan template konfirmasi pelanggan.
+                  </p>
+                </div>
+                <div class="card settings-info-card">
+                  <h3>Pengaturan Pembayaran &amp; WhatsApp</h3>
+                  <p
+                    class="text-muted"
+                    style="font-size: 0.85rem; margin-bottom: 16px"
+                  >
+                    Atur info transfer, QRIS, dan pesan konfirmasi agar landing
+                    page langsung sinkron.
+                  </p>
+                  <div class="settings-form payment-wa-form">
+                    <div class="form-row-settings">
+                      <div class="form-group">
+                        <label>Nomor WhatsApp Admin</label>
+                        <input id="cfgWaNumber" placeholder="6281234567890" />
+                        <small class="text-muted"
+                          >Format internasional tanpa tanda +, misalnya
+                          `62812...`</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label>Judul Pesan Penenang</label>
+                        <input
+                          id="cfgReassuranceTitle"
+                          placeholder="Tenang, Pembayaranmu Aman"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Teks Penenang</label>
+                      <textarea
+                        id="cfgReassuranceText"
+                        rows="2"
+                        placeholder="TWINS platform resmi — setiap transaksi dikonfirmasi tim kami maksimal 1×24 jam."
+                      ></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label>Poin Kepercayaan</label>
+                      <textarea
+                        id="cfgTrustPoints"
+                        rows="3"
+                        placeholder="Pembayaran ke rekening resmi TWINS&#10;Konfirmasi cepat via WhatsApp&#10;Data pribadi aman &amp; rahasia"
+                      ></textarea>
+                    </div>
+                    <div class="form-row-settings">
+                      <div class="form-group">
+                        <label>Bank Transfer</label>
+                        <input id="cfgTransferBank" placeholder="BCA" />
+                      </div>
+                      <div class="form-group">
+                        <label>No. Rekening</label>
+                        <input
+                          id="cfgTransferAccount"
+                          placeholder="1234567890"
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Atas Nama</label>
+                        <input
+                          id="cfgTransferName"
+                          placeholder="TWINS Swimming Club"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Catatan Transfer</label>
+                      <input
+                        id="cfgTransferNote"
+                        placeholder="Pastikan nominal sesuai. Simpan bukti transfer."
+                      />
+                    </div>
+                    <div class="form-row-settings">
+                      <div class="form-group">
+                        <label>Gambar QRIS</label>
+                        <div class="qris-upload-wrap">
+                          <div class="qris-preview-box" id="qrisPreviewBox">
+                            <img
+                              id="qrisPreviewImg"
+                              alt="Preview QRIS"
+                              style="
+                                display: none;
+                                max-width: 100%;
+                                max-height: 160px;
+                                object-fit: contain;
+                                border-radius: 6px;
+                              "
+                            />
+                            <div
+                              id="qrisPreviewPlaceholder"
+                              class="qris-placeholder-inner"
+                            >
+                              <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                style="color: var(--text-muted)"
+                              >
+                                <rect
+                                  x="3"
+                                  y="3"
+                                  width="18"
+                                  height="18"
+                                  rx="2"
+                                />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                              <span>Belum ada gambar QRIS</span>
+                            </div>
+                          </div>
+                          <div class="qris-upload-actions">
+                            <label class="qris-upload-btn" for="qrisFileInput">
+                              <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                              >
+                                <path
+                                  d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                                />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                              </svg>
+                              Pilih Gambar
+                              <input
+                                type="file"
+                                id="qrisFileInput"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleQrisUpload(event)"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="qrisRemoveBtn"
+                              onclick="removeQrisImage()"
+                              style="display: none"
+                            >
+                              ✕ Hapus
+                            </button>
+                          </div>
+                          <small class="text-muted" style="font-size: 0.75rem"
+                            >Format JPG, PNG, atau GIF. Maks 2MB. Tersimpan
+                            lokal di browser.</small
+                          >
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Catatan QRIS</label>
+                        <input
+                          id="cfgQrisNote"
+                          placeholder="Scan QRIS — pembayaran instan &amp; aman"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Template WA — Transfer Bank</label>
+                      <textarea
+                        id="cfgWaTemplateTransfer"
+                        rows="5"
+                        placeholder="Gunakan {nama}, {paket}, {total}, {bank}, {rekening}, {atasnama}, {ref}, {metode}"
+                      ></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label>Template WA — QRIS / E-Wallet</label>
+                      <textarea id="cfgWaTemplateQris" rows="4"></textarea>
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-top: 8px;
+                      "
+                    >
+                      <button onclick="savePaymentConfig()">
+                        Simpan Pengaturan Pembayaran
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="stabWeb" class="stab-panel" style="display: none">
+            <div class="settings-stack">
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 3</p>
+                    <h3>Identitas brand &amp; informasi publik</h3>
+                  </div>
+                  <p>
+                    Informasi di sini akan dipakai untuk tampilan utama landing
+                    page, footer, dan identitas klub.
+                  </p>
+                </div>
+                <div class="settings-grid settings-grid--fit">
+                  <div class="card settings-info-card">
+                    <h3>Informasi Perusahaan</h3>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Nama Klub</label
+                          ><input
+                            id="webClubName"
+                            placeholder="Twins Swimming Club"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>Tahun Berdiri</label
+                          ><input id="webFoundedYear" placeholder="2021" />
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Tagline Hero</label
+                        ><input
+                          id="webTagline"
+                          placeholder="Klub renang profesional di Tangerang Selatan sejak 2021"
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Deskripsi About</label
+                        ><textarea
+                          id="webAboutText"
+                          rows="4"
+                          placeholder="Twins Swimming Club merupakan klub renang yang berdiri sejak tahun 2021..."
+                        ></textarea>
+                      </div>
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Kota / Alamat</label
+                          ><input
+                            id="webCity"
+                            placeholder="Tangerang Selatan, Banten"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>Email Publik</label
+                          ><input
+                            id="webEmail"
+                            placeholder="twinsswimmingclub@gmail.com"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Instagram</label
+                          ><input
+                            id="webInstagram"
+                            placeholder="@twinsswimmingclub"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>TikTok</label
+                          ><input
+                            id="webTiktok"
+                            placeholder="@twinsswimmingclub"
+                          />
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: flex-end;
+                          margin-top: 8px;
+                        "
+                      >
+                        <button onclick="saveWebConfig()">
+                          Simpan Identitas Website
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <h3>Statistik Hero Landing Page</h3>
+                    <p
+                      class="text-muted"
+                      style="font-size: 0.85rem; margin-bottom: 12px"
+                    >
+                      Angka yang tampil di bagian hero website.
+                    </p>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Jumlah Client / Member</label
+                          ><input id="webStatMembers" placeholder="100+" />
+                        </div>
+                        <div class="form-group">
+                          <label>Jumlah Coach</label
+                          ><input id="webStatCoaches" placeholder="5+" />
+                        </div>
+                        <div class="form-group">
+                          <label>Jumlah Kolam Aktif</label
+                          ><input id="webStatLocations" placeholder="3" />
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: flex-end;
+                          margin-top: 8px;
+                        "
+                      >
+                        <button onclick="saveWebConfig()">
+                          Simpan Statistik
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 4</p>
+                    <h3>Media landing page</h3>
+                  </div>
+                  <p>
+                    Upload media hero, foto program, dan foto tentang kami agar
+                    landing page tidak kosong.
+                  </p>
+                </div>
+                <div class="settings-grid">
+                  <div class="card settings-info-card">
+                    <h3>Media Hero</h3>
+                    <p
+                      class="text-muted"
+                      style="font-size: 0.85rem; margin-bottom: 14px"
+                    >
+                      Foto atau video utama di bagian paling atas landing page.
+                    </p>
+                    <div class="settings-form">
+                      <div class="form-group">
+                        <label>Foto Hero Background</label>
+                        <div class="media-upload-wrap">
+                          <div class="media-preview-box" id="heroImgPreview">
+                            <img
+                              id="heroImgPreviewImg"
+                              style="
+                                display: none;
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                border-radius: 8px;
+                              "
+                              alt="Hero"
+                            />
+                            <div
+                              class="media-placeholder"
+                              id="heroImgPlaceholder"
+                            >
+                              <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <rect
+                                  x="3"
+                                  y="3"
+                                  width="18"
+                                  height="18"
+                                  rx="2"
+                                />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                              <span>Belum ada foto hero</span>
+                            </div>
+                          </div>
+                          <div class="media-actions">
+                            <label class="qris-upload-btn" for="heroImgInput"
+                              >📷 Upload Foto Hero<input
+                                type="file"
+                                id="heroImgInput"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="
+                                  handleWebMediaUpload(event, 'heroImg')
+                                "
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="heroImgRemoveBtn"
+                              onclick="removeWebMedia('heroImg')"
+                              style="display: none"
+                            >
+                              ✕ Hapus
+                            </button>
+                          </div>
+                          <small class="text-muted">JPG/PNG. Maks 5MB.</small>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div class="card settings-info-card">
+                    <h3>Foto Program &amp; Tentang Kami</h3>
+                    <p
+                      class="text-muted"
+                      style="font-size: 0.85rem; margin-bottom: 14px"
+                    >
+                      Foto ini akan langsung dipakai pada card program dan
+                      section tentang kami.
+                    </p>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Program 1 — Private Class</label>
+                          <div class="media-upload-wrap">
+                            <div
+                              class="media-preview-box small"
+                              id="prog1Preview"
+                            >
+                              <img
+                                id="prog1Img"
+                                style="
+                                  display: none;
+                                  width: 100%;
+                                  height: 100%;
+                                  object-fit: cover;
+                                  border-radius: 6px;
+                                "
+                                alt=""
+                              />
+                              <div
+                                class="media-placeholder"
+                                id="prog1Placeholder"
+                              >
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                  />
+                                  <polyline points="21 15 16 10 5 21" /></svg
+                                ><span>Foto 1</span>
+                              </div>
+                            </div>
+                            <label class="qris-upload-btn" for="prog1Input"
+                              >Upload<input
+                                type="file"
+                                id="prog1Input"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleWebMediaUpload(event, 'prog1')"
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="prog1RemoveBtn"
+                              onclick="removeWebMedia('prog1')"
+                              style="display: none"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label>Program 2 — Group Class</label>
+                          <div class="media-upload-wrap">
+                            <div
+                              class="media-preview-box small"
+                              id="prog2Preview"
+                            >
+                              <img
+                                id="prog2Img"
+                                style="
+                                  display: none;
+                                  width: 100%;
+                                  height: 100%;
+                                  object-fit: cover;
+                                  border-radius: 6px;
+                                "
+                                alt=""
+                              />
+                              <div
+                                class="media-placeholder"
+                                id="prog2Placeholder"
+                              >
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                  />
+                                  <polyline points="21 15 16 10 5 21" /></svg
+                                ><span>Foto 2</span>
+                              </div>
+                            </div>
+                            <label class="qris-upload-btn" for="prog2Input"
+                              >Upload<input
+                                type="file"
+                                id="prog2Input"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleWebMediaUpload(event, 'prog2')"
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="prog2RemoveBtn"
+                              onclick="removeWebMedia('prog2')"
+                              style="display: none"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label>Program 3 — Private + Group</label>
+                          <div class="media-upload-wrap">
+                            <div
+                              class="media-preview-box small"
+                              id="prog3Preview"
+                            >
+                              <img
+                                id="prog3Img"
+                                style="
+                                  display: none;
+                                  width: 100%;
+                                  height: 100%;
+                                  object-fit: cover;
+                                  border-radius: 6px;
+                                "
+                                alt=""
+                              />
+                              <div
+                                class="media-placeholder"
+                                id="prog3Placeholder"
+                              >
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                  />
+                                  <polyline points="21 15 16 10 5 21" /></svg
+                                ><span>Foto 3</span>
+                              </div>
+                            </div>
+                            <label class="qris-upload-btn" for="prog3Input"
+                              >Upload<input
+                                type="file"
+                                id="prog3Input"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleWebMediaUpload(event, 'prog3')"
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="prog3RemoveBtn"
+                              onclick="removeWebMedia('prog3')"
+                              style="display: none"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-group" style="margin-top: 8px">
+                        <label>Foto About / Tentang Kami</label>
+                        <div class="media-upload-wrap">
+                          <div class="media-preview-box" id="aboutImgPreview">
+                            <img
+                              id="aboutImgPreviewImg"
+                              style="
+                                display: none;
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                border-radius: 8px;
+                              "
+                              alt=""
+                            />
+                            <div
+                              class="media-placeholder"
+                              id="aboutImgPlaceholder"
+                            >
+                              <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <rect
+                                  x="3"
+                                  y="3"
+                                  width="18"
+                                  height="18"
+                                  rx="2"
+                                />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" /></svg
+                              ><span>Belum ada foto</span>
+                            </div>
+                          </div>
+                          <div class="media-actions">
+                            <label class="qris-upload-btn" for="aboutImgInput"
+                              >📷 Upload Foto About<input
+                                type="file"
+                                id="aboutImgInput"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="
+                                  handleWebMediaUpload(event, 'aboutImg')
+                                "
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="aboutImgRemoveBtn"
+                              onclick="removeWebMedia('aboutImg')"
+                              style="display: none"
+                            >
+                              ✕ Hapus
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Kelompok 5: Galeri Kegiatan ── -->
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 5</p>
+                    <h3>Galeri Kegiatan</h3>
+                  </div>
+                  <p>Upload foto-foto kegiatan latihan untuk ditampilkan sebagai slider di landing page. Maks 10 foto, tiap foto maks 3MB.</p>
+                </div>
+                <div class="card settings-info-card">
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+                    <h3 style="margin:0">Foto Galeri (<span id="galleryCount">0</span>/10)</h3>
+                    <label class="qris-upload-btn" for="galleryUploadInput" id="galleryUploadLabel">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      + Tambah Foto
+                      <input type="file" id="galleryUploadInput" accept="image/*" multiple style="display:none" onchange="handleGalleryUpload(event)" />
+                    </label>
+                  </div>
+                  <div id="galleryAdminGrid" class="gallery-admin-grid">
+                    <p class="text-muted" style="font-size:.85rem">Belum ada foto galeri.</p>
+                  </div>
+                  <small class="text-muted" style="display:block;margin-top:10px">Format JPG/PNG. Maks 3MB per foto. Bisa tambah caption untuk tiap foto.</small>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ════ 8. STRUKTUR ORGANISASI ════ -->
+        <section
+          id="orgchartSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card" style="margin-bottom: 16px">
+            <div class="section-head">
+              <div>
+                <h3 style="margin-bottom: 2px">Struktur Organisasi TWINS</h3>
+                <small class="text-muted"
+                  >Tim pelatih dan manajemen platform</small
+                >
+              </div>
+              <button class="admin-only" onclick="openOrgModal()">
+                + Tambah Anggota
+              </button>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden">
+            <div
+              id="orgChartContainer"
+              class="org-chart-wrap"
+              style="padding: 8px 20px 16px"
+            ></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ══════════ MODALS ══════════ -->
+
+    <!-- Lokasi -->
+    <div
+      id="locationModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <h3 id="locationModalTitle">Tambah Lokasi</h3>
+        <div class="form-group">
+          <label>Nama Lokasi / Cabang</label><input id="locName" />
+        </div>
+        <div class="form-group">
+          <label>Coach Pengajar</label>
+          <div
+            id="locCoachCheckboxes"
+            style="
+              border: 1px solid var(--border);
+              border-radius: var(--radius-sm);
+              overflow: hidden;
+              background: var(--surface);
+              max-height: 200px;
+              overflow-y: auto;
+            "
+          >
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Alamat Lengkap</label><input id="locAddress" />
+        </div>
+        <div class="form-group">
+          <label>Kapasitas Slot Total</label
+          ><input id="locCapacity" type="number" min="1" />
+        </div>
+        <div
+          class="form-group"
+          style="
+            background: var(--accent-soft);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+          "
+        >
+          ℹ️ Slot terisi dihitung otomatis dari jumlah member aktif di lokasi
+          ini.
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="locStatus">
+            <option value="Aktif">Aktif</option>
+            <option value="Tutup Sementara">Tutup Sementara</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveLocation()">Simpan</button
+          ><button onclick="closeLocationModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member -->
+    <div id="memberModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeMemberModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="memberModalTitle">Daftarkan Member Baru</h3>
+        <div class="form-group">
+          <label>Nama Lengkap</label><input id="memName" />
+        </div>
+        <div class="form-group">
+          <label>Nomor HP / WhatsApp</label><input id="memPhone" />
+        </div>
+        <div class="form-group">
+          <label>Email (opsional)</label><input id="memEmail" type="email" />
+        </div>
+        <div class="form-group">
+          <label>Tanggal Lahir</label><input id="memDob" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Lokasi</label
+          ><select id="memLocation">
+            <option value="">— Pilih Lokasi —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Paket</label>
+          <select id="memPackage">
+            <!-- diisi otomatis dari state.packages -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tanggal Bergabung</label><input id="memJoinDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="memStatus">
+            <option value="Aktif">Aktif</option>
+            <option value="Tidak Aktif">Tidak Aktif</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveMember()">Daftarkan</button
+          ><button onclick="closeMemberModal()" class="secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pembayaran -->
+    <div id="paymentModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closePaymentModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="paymentModalTitle">Catat Pembayaran</h3>
+        <div class="form-group">
+          <label>Member</label
+          ><select id="payMember">
+            <option value="">— Pilih Member —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipe</label
+          ><select id="payType">
+            <option value="Pendaftaran">Pendaftaran</option>
+            <option value="Bulanan">Bulanan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Jumlah (Rp)</label
+          ><input id="payAmount" type="number" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Tanggal</label><input id="payDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Status</label
+          ><select id="payStatus">
+            <option value="Lunas">Lunas</option>
+            <option value="Menunggak">Menunggak</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Catatan (opsional)</label><input id="payNote" />
+        </div>
+        <div class="actions">
+          <button onclick="savePayment()">Simpan</button
+          ><button onclick="closePaymentModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bukti Pembayaran Preview -->
+    <div id="proofModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card proof-modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeProofModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3>Bukti Pembayaran</h3>
+        <div class="proof-modal-body">
+          <img id="proofModalImage" src="" alt="Bukti Pembayaran" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Jadwal -->
+    <div
+      id="scheduleModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeScheduleModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="scheduleModalTitle">Tambah Jadwal Latihan</h3>
+        <div class="form-group">
+          <label>Member</label
+          ><select id="schMember">
+            <option value="">— Pilih Member —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Hari</label>
+          <select id="schDay">
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+            <option value="Sabtu">Sabtu</option>
+            <option value="Minggu">Minggu</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Waktu</label><input id="schTime" type="time" />
+        </div>
+        <div class="form-group">
+          <label>Coach / Trainer</label><input id="schCoach" />
+        </div>
+        <div class="form-group">
+          <label>Tipe Latihan</label>
+          <select id="schType">
+            <option>Personal Training</option>
+            <option>Group Class</option>
+            <option>Cardio</option>
+            <option>Strength</option>
+            <option>Yoga</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveSchedule()">Simpan</button
+          ><button onclick="closeScheduleModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Catatan / Evaluasi -->
+    <div id="noteModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeNoteModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="noteModalTitle">Tambah Catatan Sesi</h3>
+        <div class="form-group">
+          <label>Member</label
+          ><select id="noteMember">
+            <option value="">— Pilih Member —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipe</label>
+          <select id="noteType">
+            <option value="Catatan">Catatan Sesi</option>
+            <option value="Evaluasi">Evaluasi</option>
+            <option value="Progress">Progress</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tanggal</label><input id="noteDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Skor Progress (1–10)</label
+          ><input
+            id="noteScore"
+            type="number"
+            min="1"
+            max="10"
+            placeholder="Opsional"
+          />
+        </div>
+        <div class="form-group">
+          <label>Catatan</label
+          ><textarea
+            id="noteContent"
+            rows="4"
+            placeholder="Tulis catatan atau hasil evaluasi..."
+          ></textarea>
+        </div>
+        <div class="actions">
+          <button onclick="saveNote()">Simpan</button
+          ><button onclick="closeNoteModal()" class="secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin User -->
+    <div
+      id="adminUserModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeAdminUserModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="adminUserModalTitle">Tambah Akun</h3>
+        <div class="form-group"><label>Nama</label><input id="auName" /></div>
+        <div class="form-group">
+          <label>Email</label><input id="auEmail" type="email" />
+        </div>
+        <div class="form-group">
+          <label>Password</label><input id="auPassword" type="password" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="auRole">
+            <option value="Admin">Admin</option>
+            <option value="Coach">Coach</option>
+            <option value="Manager">Manager</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveAdminUser()">Simpan</button
+          ><button onclick="closeAdminUserModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paket -->
+    <div id="packageModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closePackageModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="packageModalTitle">Tambah Paket</h3>
+        <div class="form-group">
+          <label>Nama Paket</label><input id="pkgName" />
+        </div>
+        <div class="form-group">
+          <label>Harga per Bulan (Rp)</label
+          ><input id="pkgPrice" type="number" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Deskripsi</label
+          ><input
+            id="pkgDesc"
+            placeholder="Contoh: 3x seminggu, akses semua kelas"
+          />
+        </div>
+        <div class="actions">
+          <button onclick="savePackage()">Simpan</button
+          ><button onclick="closePackageModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Org Chart -->
+    <div id="orgModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeOrgModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="orgModalTitle">Tambah Anggota</h3>
+        <div class="form-group">
+          <label>Nama Lengkap</label
+          ><input id="orgName" placeholder="Contoh: Dr. Ahmad Fauzi, S.Pd." />
+        </div>
+        <div class="form-group">
+          <label>Gelar / Jabatan</label>
+          <div
+            style="
+              border: 1px solid var(--border);
+              border-radius: var(--radius-sm);
+              overflow: hidden;
+              background: var(--surface);
+              max-height: 180px;
+              overflow-y: auto;
+              margin-bottom: 8px;
+            "
+          >
+            <table
+              style="width: 100%; border-collapse: collapse; font-size: 0.9rem"
+            >
+              <thead
+                style="
+                  background: var(--bg);
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <tr>
+                  <th style="padding: 8px; width: 50px; text-align: center">
+                    Pilih
+                  </th>
+                  <th style="padding: 8px; text-align: left">Jabatan</th>
+                </tr>
+              </thead>
+              <tbody id="orgTitleTableBody">
+                <!-- JS will populate -->
+              </tbody>
+            </table>
+          </div>
+          <input id="orgTitle" placeholder="Atau ketik manual di sini..." />
+        </div>
+        <div class="form-group">
+          <label>Spesialisasi</label
+          ><input id="orgSpec" placeholder="Contoh: Strength & Conditioning" />
+        </div>
+        <div class="form-group">
+          <label>Level</label>
+          <select id="orgLevel">
+            <option value="head">Head Coach (Puncak)</option>
+            <option value="senior">Senior Coach / Manager</option>
+            <option value="coach">Coach / Trainer</option>
+            <option value="staff">Staff Pendukung</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Atasan Langsung (opsional)</label>
+          <select id="orgParent">
+            <option value="">— Tidak ada (posisi puncak) —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nomor HP</label><input id="orgPhone" placeholder="Opsional" />
+        </div>
+        <div class="form-group">
+          <label>Foto Profil Pelatih</label>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div id="orgPhotoPreview" style="
+              width:72px;height:72px;border-radius:50%;
+              background:linear-gradient(135deg,#1458a3,#2280e8);
+              display:flex;align-items:center;justify-content:center;
+              font-size:1.6rem;font-weight:800;color:#fff;
+              overflow:hidden;border:3px solid var(--border);
+              flex-shrink:0;position:relative;
+            ">?</div>
+            <div style="flex:1;min-width:160px;">
+              <label for="orgPhotoInput" style="
+                display:inline-block;padding:8px 16px;
+                background:var(--primary);color:#fff;border-radius:8px;
+                cursor:pointer;font-size:0.85rem;font-weight:600;
+              ">📷 Upload Foto</label>
+              <input type="file" id="orgPhotoInput" accept="image/*" style="display:none" onchange="previewOrgPhoto(this)" />
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">JPG/PNG, maks 2MB</div>
+              <button type="button" onclick="clearOrgPhoto()" style="
+                margin-top:4px;padding:4px 10px;font-size:0.75rem;
+                background:transparent;border:1px solid var(--border);
+                border-radius:6px;cursor:pointer;color:var(--muted);
+              ">Hapus Foto</button>
+            </div>
+          </div>
+          <input type="hidden" id="orgPhotoData" />
+        </div>
+        <div class="actions">
+          <button onclick="saveOrgMember()">Simpan</button>
+          <button onclick="closeOrgModal()" class="secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div
+      id="confirmOverlay"
+      class="confirm-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="confirm-card">
+        <div class="confirm-icon-wrap" id="confirmIconWrap">
+          <svg
+            id="confirmIcon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4h6v2" />
+          </svg>
+        </div>
+        <h3 id="confirmTitle">Konfirmasi</h3>
+        <p id="confirmMessage">Yakin ingin melanjutkan?</p>
+        <div class="confirm-actions">
+          <button class="confirm-btn-cancel" onclick="resolveConfirm(false)">
+            Batal
+          </button>
+          <button
+            id="confirmOkBtn"
+            class="confirm-btn-ok"
+            onclick="resolveConfirm(true)"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script type="module" src="firebase-init.js?v=2"></script>
+    <script src="script.js?v=2"></script>
+  </body>
+</html>
+
