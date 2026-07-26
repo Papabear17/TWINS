@@ -4,8 +4,19 @@
 
 const STORAGE_KEY = 'twinsData_v3';
 const THEME_KEY   = 'twinsTheme';
+const SESSION_KEY = 'twinsUserSession';
+const INVITE_LINK = 'https://wabsitetwins.vercel.app/';
 
-// ── Demo Accounts ──────────────────────────────
+// ── Password Hashing (simple SHA-256 for frontend validation) ──
+async function hashPassword(plaintext) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── Demo Accounts (passwords should be hashed on first init) ──
 const DEMO_ACCOUNTS = [
   { id: 1, name: 'Admin TWINS', email: 'admin@twins.id',   password: 'admin123', role: 'Admin'   },
   { id: 2, name: 'Coach Rina',  email: 'rina@twins.id',    password: 'rina123',  role: 'Coach'   },
@@ -21,6 +32,7 @@ const defaultState = {
   theme: 'light',
   isLoggedIn: false,
   activeSection: 'dashboard',
+  sharedUpdatedAt: 0,
   config: { appName: 'Twins Swimming Club', contact: 'twinsswimmingclub@gmail.com', regFee: 100000, dueDay: 5 },
   locations: [
     { id: 1, name: 'Kolam Renang Bukit Dago',   address: 'Bukit Dago, Tangerang Selatan',  capacity: 30, status: 'Aktif' },
@@ -28,10 +40,11 @@ const defaultState = {
     { id: 3, name: 'Kolam Renang Bali Resort',   address: 'Bali Resort, Tangerang Selatan',  capacity: 20, status: 'Aktif' }
   ],
   members: [
-    { id: 1, name: 'Aqil Syafiq',  phone: '081234567890', email: 'aqil@twins.id',   dob: '1998-05-14', locationId: 1, package: 'Premium',  joinDate: '2026-06-01', status: 'Aktif' },
-    { id: 2, name: 'Bima Putra',   phone: '082345678901', email: 'bima@email.com',  dob: '2000-11-20', locationId: 1, package: 'Standard', joinDate: '2026-06-15', status: 'Aktif' },
-    { id: 3, name: 'Citra Dewi',   phone: '083456789012', email: 'citra@email.com', dob: '1995-03-08', locationId: 3, package: 'Basic',    joinDate: '2026-07-01', status: 'Aktif' },
-    { id: 4, name: 'Doni Pratama', phone: '084567890123', email: '',               dob: '1990-07-25', locationId: 2, package: 'Standard', joinDate: '2026-05-10', status: 'Tidak Aktif' }
+    { id: 1, name: 'Admin TWINS',  phone: '081111111111', email: 'admin@twins.id',  dob: '1990-01-15', locationId: 1, package: 'Premium',  joinDate: '2026-01-01', status: 'Aktif' },
+    { id: 2, name: 'Aqil Syafiq',  phone: '081234567890', email: 'aqil@twins.id',   dob: '1998-05-14', locationId: 1, package: 'Premium',  joinDate: '2026-06-01', status: 'Aktif' },
+    { id: 3, name: 'Bima Putra',   phone: '082345678901', email: 'bima@email.com',  dob: '2000-11-20', locationId: 1, package: 'Standard', joinDate: '2026-06-15', status: 'Aktif' },
+    { id: 4, name: 'Citra Dewi',   phone: '083456789012', email: 'citra@email.com', dob: '1995-03-08', locationId: 3, package: 'Basic',    joinDate: '2026-07-01', status: 'Aktif' },
+    { id: 5, name: 'Doni Pratama', phone: '084567890123', email: 'doni@email.com',   dob: '1990-07-25', locationId: 2, package: 'Standard', joinDate: '2026-05-10', status: 'Tidak Aktif' }
   ],
   payments: [
     { id: 1, memberId: 1, type: 'Pendaftaran', amount: 100000, date: '2026-06-01', status: 'Lunas',     note: '' },
@@ -58,9 +71,9 @@ const defaultState = {
   ],
   adminUsers: [...DEMO_ACCOUNTS],
   packages: [
-    { id: 1, name: 'Basic',    price: 250000, desc: '2x seminggu, akses gym' },
-    { id: 2, name: 'Standard', price: 400000, desc: '3x seminggu, akses gym + kelas' },
-    { id: 3, name: 'Premium',  price: 650000, desc: 'Unlimited, personal trainer' }
+    { id: 1, name: 'Basic',    price: 250000, desc: '2x seminggu, akses kolam renang', status: 'none', popular: false },
+    { id: 2, name: 'Standard', price: 400000, desc: '3x seminggu, akses kolam renang + kelas', status: 'recommended', popular: false },
+    { id: 3, name: 'Premium',  price: 650000, desc: 'Unlimited, personal trainer', status: 'popular', popular: true }
   ],
   orgMembers: [
     { id: 101, name: 'Yanto',     title: 'Founder',      spec: 'Strategi Klub & Pengembangan', level: 'head',   parentId: null, phone: '081111111111' },
@@ -120,6 +133,31 @@ function getFirebaseBridge() {
   return window.twinsFirebase && window.twinsFirebase.enabled ? window.twinsFirebase : null;
 }
 
+function getSharedUpdatedAt(source = {}) {
+  return Number(source?.sharedUpdatedAt || 0);
+}
+
+function touchSharedState(source = state) {
+  source.sharedUpdatedAt = Date.now();
+  return source.sharedUpdatedAt;
+}
+
+function buildSharedStatePayload() {
+  // Jangan sync adminUsers ke Firebase karena data ini bersifat lokal dan sensitif.
+  const { adminUsers, ...safeState } = state;
+  return safeState;
+}
+
+function mergeRemoteStateWithLocal(remoteState = {}) {
+  const nextState = mergeAppState(remoteState);
+  nextState.adminUsers = cloneStateData(
+    Array.isArray(state.adminUsers) && state.adminUsers.length
+      ? state.adminUsers
+      : defaultState.adminUsers,
+  );
+  return nextState;
+}
+
 function persistLocalState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -146,16 +184,56 @@ function saveState() {
   state = mergeAppState(state);
   normalizeStateCollections();
   syncMemberStatusWithPayments();
+  touchSharedState(state);
   persistLocalState();
 
   const bridge = getFirebaseBridge();
   if (bridge) {
-    // Jangan sync adminUsers ke Firebase — berisi password hash yang sensitif
-    const { adminUsers, ...safeState } = state;
-    bridge.saveSharedState(safeState).catch((error) => {
+    bridge.saveSharedState(buildSharedStatePayload()).catch((error) => {
       console.warn('Failed to sync state to Firebase', error);
     });
   }
+  // update sync indicator
+  try { refreshAdminSyncStatus(); } catch(e){}
+}
+
+// ── Firebase Real-Time Subscription ──
+function subscribeToFirebaseChanges() {
+  const bridge = getFirebaseBridge();
+  if (!bridge) return;
+
+  // Unsubscribe dari listener lama jika ada
+  if (firebaseStateUnsubscribe) {
+    firebaseStateUnsubscribe();
+  }
+
+  // Subscribe ke perubahan Firebase
+  firebaseStateUnsubscribe = bridge.subscribeSharedState(
+    (remoteState) => {
+      if (!remoteState) return;
+
+      // Jangan update jika remote state lebih lama dari local (untuk menghindari rollback)
+      if (getSharedUpdatedAt(remoteState) <= getSharedUpdatedAt(state)) {
+        return;
+      }
+
+      // Merge remote state dengan local (preserve adminUsers)
+      const nextState = mergeRemoteStateWithLocal(remoteState);
+      state = nextState;
+      normalizeStateCollections();
+      persistLocalState();
+
+      // Re-render UI untuk reflect perubahan dari Firebase
+      if (currentUser) {
+        render();
+        checkNotifications();
+        showToast('Data tersinkronisasi dari server');
+      }
+    },
+    (error) => {
+      console.warn('Firebase subscription error:', error);
+    }
+  );
 }
 
 async function hydrateSharedState() {
@@ -188,7 +266,12 @@ async function hydrateSharedState() {
 
     const remoteState = await Promise.race([bridge.loadSharedState(), timeoutPromise]);
     if (remoteState) {
-      state = mergeAppState(remoteState);
+      const nextState = mergeRemoteStateWithLocal(remoteState);
+      if (getSharedUpdatedAt(nextState) < getSharedUpdatedAt(state)) {
+        saveState();
+        return;
+      }
+      state = nextState;
       normalizeStateCollections();
       persistLocalState();
     } else {
@@ -217,7 +300,13 @@ async function subscribeSharedState() {
     firebaseStateUnsubscribe = bridge.subscribeSharedState((remoteState) => {
       if (!remoteState) return;
 
-      const nextState = mergeAppState(remoteState);
+      const nextState = mergeRemoteStateWithLocal(remoteState);
+      if (getSharedUpdatedAt(nextState) < getSharedUpdatedAt(state)) {
+        bridge.saveSharedState(buildSharedStatePayload()).catch((error) => {
+          console.warn('Failed to restore newer local state to Firebase', error);
+        });
+        return;
+      }
       const nextSignature = JSON.stringify(nextState);
       if (nextSignature === firebaseStateSignature) return;
 
@@ -285,7 +374,12 @@ function normalizeOrgMembers(members = []) {
 }
 
 function normalizeStateCollections() {
-  state.orgMembers = normalizeOrgMembers(state.orgMembers || defaultState.orgMembers || []);
+  // Jangan pernah fallback ke defaultState — biarkan empty array jika user menghapus semua
+  if (!Array.isArray(state.orgMembers) || state.orgMembers.length === 0) {
+    state.orgMembers = [];
+  } else {
+    state.orgMembers = normalizeOrgMembers(state.orgMembers);
+  }
 }
 
 // ── Password Hashing (Web Crypto API — SHA-256) ──────────────
@@ -326,7 +420,7 @@ async function doLogin() {
   currentUser = user;
 
   // Simpan sesi
-  try { sessionStorage.setItem('twinsUser', JSON.stringify(user)); } catch(e) {}
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch(e) {}
 
   // ── Tampilkan post-login welcome overlay ──────────────────────
   showLoginWelcome(user.name, user.role, () => {
@@ -338,7 +432,7 @@ async function doLogin() {
     applyRoleUI();
     applyTheme();
 
-    const map = { dashboard:'dashboardSection', locations:'locationsSection', members:'membersSection', payments:'paymentsSection', schedule:'scheduleSection', notes:'notesSection', progress:'progressSection', reports:'reportsSection', settings:'settingsSection', orgchart:'orgchartSection' };
+    const map = { dashboard:'dashboardSection', locations:'locationsSection', members:'membersSection', membership:'membershipSection', payments:'paymentsSection', schedule:'scheduleSection', notes:'notesSection', progress:'progressSection', reports:'reportsSection', settings:'settingsSection', orgchart:'orgchartSection' };
     Object.values(map).forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`[data-section="dashboard"]`)?.classList.add('active');
@@ -349,6 +443,11 @@ async function doLogin() {
     const dash = document.getElementById('dashboardSection');
     if (dash) dash.style.display = 'block';
     render();
+
+    // ── Subscribe ke Firebase untuk real-time updates ──
+    if (!firebaseStateUnsubscribe) {
+      subscribeToFirebaseChanges();
+    }
   });
 }
 
@@ -361,7 +460,14 @@ function doLogout() {
   }).then(ok => {
     if (!ok) return;
     currentUser = null;
-    try { sessionStorage.removeItem('twinsUser'); } catch(e) {}
+    
+    // Unsubscribe dari Firebase sebelum logout
+    if (firebaseStateUnsubscribe) {
+      firebaseStateUnsubscribe();
+      firebaseStateUnsubscribe = null;
+    }
+    
+    try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
     document.getElementById('appShell').style.display         = 'none';
     const loginPage = document.getElementById('loginPage');
     loginPage.style.display       = 'flex';
@@ -473,6 +579,7 @@ function showSection(section) {
     dashboard: 'dashboardSection',
     locations: 'locationsSection',
     members:   'membersSection',
+    membership: 'membershipSection',
     payments:  'paymentsSection',
     schedule:  'scheduleSection',
     notes:     'notesSection',
@@ -486,6 +593,7 @@ function showSection(section) {
     dashboard: () => { renderDashboard(); checkNotifications(); },
     locations: renderLocations,
     members:   renderMembers,
+    membership: renderMembership,
     payments:  renderPayments,
     schedule:  renderSchedules,
     notes:     renderNotes,
@@ -507,7 +615,8 @@ function showSection(section) {
   const headerTitle = document.getElementById('headerTitle');
   const titleMap = {
     dashboard: 'TWINS Dashboard', locations: 'Lokasi & Slot',
-    members: 'Pendaftaran Member', payments: 'Pembayaran',
+    members: 'Pendaftaran Member', membership: 'Keanggotaan',
+    payments: 'Pembayaran',
     schedule: 'Jadwal Latihan', notes: 'Catatan & Evaluasi',
     progress: 'Progress Member', reports: 'Laporan',
     settings: 'Pengaturan', orgchart: 'Struktur Organisasi'
@@ -987,6 +1096,168 @@ async function approveMember(id){
 }
 
 // ══════════════════════════════════════════════
+// KEANGGOTAAN (MEMBERSHIP OVERVIEW — SEMUA MEMBER)
+// ══════════════════════════════════════════════
+function renderMembership() {
+  const section = document.getElementById('membershipSection');
+  if (!section) return;
+
+  // ── Metrics ──
+  const total   = state.members.length;
+  const aktif   = state.members.filter(m => m.status === 'Aktif').length;
+  const pending = state.members.filter(m => m.status === 'Menunggu Verifikasi' || m.status === 'Menunggu Verifikasi Admin').length;
+  const nonaktif= state.members.filter(m => m.status === 'Tidak Aktif').length;
+
+  const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('msTotal',    total);
+  set('msAktif',    aktif);
+  set('msPending',  pending);
+  set('msNonaktif', nonaktif);
+
+  // ── Package Summary ──
+  const packages = state.packages || [];
+  const pkgSummary = document.getElementById('msPackageSummary');
+  if (pkgSummary) {
+    pkgSummary.innerHTML = packages.map(p => {
+      const count = state.members.filter(m => m.package === p.name).length;
+      return `
+        <div class="card ms-package-card">
+          <div class="ms-pkg-name">${p.name}</div>
+          <div class="ms-pkg-price">${formatRp(p.price)}<small>/bln</small></div>
+          <div class="ms-pkg-count">${count} member</div>
+          <div class="ms-pkg-bar"><div class="ms-pkg-bar-fill" style="width:${total ? (count/total)*100 : 0}%"></div></div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Status Chart (Donut) ──
+  renderMsStatusChart(aktif, pending, nonaktif);
+
+  // ── Members per Location ──
+  const locSummary = document.getElementById('msLocationSummary');
+  if (locSummary) {
+    locSummary.innerHTML = state.locations.map(l => {
+      const count = state.members.filter(m => m.locationId === l.id).length;
+      return `<div class="ms-loc-item"><strong>${l.name}</strong> <span class="status-pill completed">${count} member</span></div>`;
+    }).join('');
+  }
+
+  // ── Member List ──
+  renderMsMemberList();
+}
+
+function renderMsStatusChart(aktif, pending, nonaktif) {
+  const canvas = document.getElementById('msStatusChart');
+  const legend = document.getElementById('msStatusLegend');
+  if (!canvas) return;
+
+  const side = 150;
+  canvas.style.width  = side + 'px';
+  canvas.style.height = side + 'px';
+  canvas.style.flexShrink = '0';
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(side * dpr);
+  canvas.height = Math.round(side * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const total = aktif + pending + nonaktif || 1;
+  const cx = side/2, cy = side/2, r = 58, ir = 36;
+  const slices = [
+    { v: aktif,    c: '#16a34a', l: 'Aktif' },
+    { v: pending,  c: '#eab308', l: 'Menunggu' },
+    { v: nonaktif, c: '#ef4444', l: 'Tidak Aktif' }
+  ].filter(s => s.v > 0);
+
+  const startTime = performance.now();
+  const duration  = 700;
+  function draw(now) {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    ctx.clearRect(0, 0, side, side);
+    let angle = -Math.PI / 2;
+    slices.forEach(s => {
+      const fullSweep = (s.v / total) * Math.PI * 2;
+      const sweep = fullSweep * ease;
+      if (sweep <= 0) { angle += fullSweep; return; }
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, angle, angle + sweep);
+      ctx.lineTo(cx + Math.cos(angle + sweep) * ir, cy + Math.sin(angle + sweep) * ir);
+      ctx.arc(cx, cy, ir, angle + sweep, angle, true);
+      ctx.closePath();
+      ctx.fillStyle = s.c;
+      ctx.fill();
+      angle += fullSweep;
+    });
+    if (progress < 1) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  if (legend) {
+    legend.innerHTML = slices.map(s => `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${s.c};display:inline-block"></span>
+        <span>${s.l}: <strong>${s.v}</strong></span>
+      </div>`).join('');
+  }
+}
+
+function renderMsMemberList() {
+  const list = document.getElementById('msMemberList');
+  if (!list) return;
+
+  const search   = (document.getElementById('msSearch')?.value || '').toLowerCase();
+  const sf       = document.getElementById('msStatusFilter')?.value || '';
+  const pf       = document.getElementById('msPackageFilter')?.value || '';
+  const pkgs     = state.packages || [];
+
+  // Populate package filter
+  const pkgSel = document.getElementById('msPackageFilter');
+  if (pkgSel && pkgSel.options.length <= 1) {
+    pkgs.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.name;
+      o.textContent = p.name;
+      pkgSel.appendChild(o);
+    });
+  }
+
+  const filtered = state.members.filter(m => {
+    const nameMatch = !search || m.name.toLowerCase().includes(search) || m.phone.includes(search);
+    const statusMatch = !sf || m.status === sf;
+    const pkgMatch = !pf || m.package === pf;
+    return nameMatch && statusMatch && pkgMatch;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<p class="empty-state">Tidak ada member.</p>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(m => {
+    const initials = m.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const statusClass = m.status === 'Aktif' ? 'completed' : m.status === 'Menunggu Verifikasi' || m.status === 'Menunggu Verifikasi Admin' ? 'waiting' : 'pending';
+    return `
+      <div class="item-box">
+        <div class="item-row">
+          <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+            <div class="user-avatar" style="flex-shrink:0">${initials}</div>
+            <div style="min-width:0">
+              <strong>${m.name}</strong>&nbsp;<span class="role-badge">${m.package}</span>
+              <br><small class="text-muted">${getLocationName(m.locationId)} &middot; ${m.phone}${m.email ? ' &middot; '+m.email : ''}</small>
+              <br><small class="text-muted">Bergabung: ${m.joinDate}${m.dob ? ' &middot; Lahir: '+m.dob : ''}</small>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap">
+            <span class="status-pill ${statusClass}">${m.status}</span>
+            <button class="mini-btn" onclick="chatMember('${(m.phone||'').replace(/'/g,"\\'")}')">Chat</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
 // PEMBAYARAN
 // ══════════════════════════════════════════════
 function renderPayments(){
@@ -1004,7 +1275,116 @@ function renderPayments(){
   list.innerHTML=`<table class="dashboard-table"><thead><tr><th>Member</th><th>Tipe</th><th>Jumlah</th><th>Tanggal</th><th>Status</th><th>Bukti</th><th>Catatan</th><th></th></tr></thead><tbody id="paymentTbody"></tbody></table>`;
   const tbody=document.getElementById('paymentTbody');
   filtered.forEach(p=>{const proofCell = p.proofImage ? `<button class="mini-btn" onclick="openProofPreview(${p.id})">Lihat</button>` : '—';
-    const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${getMemberName(p.memberId)}</strong></td><td><span class="role-badge">${p.type}</span></td><td><strong>${formatRp(p.amount)}</strong></td><td>${p.date}</td><td><span class="status-pill ${p.status==='Lunas'?'completed':'pending'}">${p.status}</span></td><td>${proofCell}</td><td><small class="text-muted">${p.note||'—'}</small></td><td><div style="display:flex;gap:6px"><button class="mini-btn" onclick="editPayment(${p.id})">Edit</button><button class="mini-btn danger-btn" onclick="deletePayment(${p.id})">Hapus</button></div></td>`;tbody.appendChild(tr);});
+    const tr=document.createElement('tr');
+    // action buttons: edit, delete, and confirm (if menunggak)
+    let actionButtons = `<button class="mini-btn" onclick="editPayment(${p.id})">Edit</button><button class="mini-btn danger-btn" onclick="deletePayment(${p.id})">Hapus</button>`;
+    if (p.status === 'Menunggak' && p.proofImage) {
+      actionButtons = `<button class="mini-btn primary-btn" onclick="approvePayment(${p.id})">Konfirmasi</button>` + actionButtons;
+    }
+    // Member name cell uses class for truncation and note cell uses ellipsis
+    const noteText = p.note || '—';
+    tr.innerHTML=`<td class="member-name"><strong title="${getMemberName(p.memberId)}">${getMemberName(p.memberId)}</strong></td><td><span class="role-badge">${p.type}</span></td><td><strong>${formatRp(p.amount)}</strong></td><td>${p.date}</td><td><span class="status-pill ${p.status==='Lunas'?'completed':'pending'}">${p.status}</span></td><td>${proofCell}</td><td class="note-cell"><small class="text-muted" title="${noteText}">${noteText}</small></td><td class="actions-cell"><div style="display:flex;gap:6px;align-items:center">` +
+      // add WhatsApp contact button (open WA chat to member phone)
+      // pass payment id so we can craft a message including payment details
+      `<button class="mini-btn" onclick="openWhatsAppToMember(${p.id})">WA</button>` +
+      actionButtons + `</div></td>`;tbody.appendChild(tr);});
+}
+
+async function approvePayment(paymentId) {
+  const p = state.payments.find(x => x.id === paymentId);
+  if (!p) return;
+  if (p.status === 'Lunas') { showToast('Pembayaran sudah dikonfirmasi.'); return; }
+  const ok = await showConfirm({ title: 'Konfirmasi Pembayaran', message: `Konfirmasi pembayaran untuk ${getMemberName(p.memberId)} sebesar ${formatRp(p.amount)}?`, okLabel: 'Konfirmasi', type: 'primary' });
+  if (!ok) return;
+  // tandai pembayaran Lunas
+  state.payments = state.payments.map(x => x.id === paymentId ? { ...x, status: 'Lunas', note: (x.note || '') + ' | Dikonfirmasi Admin' } : x);
+  // aktifkan member jika perlu
+  const member = state.members.find(m => m.id === p.memberId);
+  if (member) {
+    member.status = 'Aktif';
+  }
+  saveState();
+  renderPayments();
+  renderDashboard();
+  showToast('Pembayaran dikonfirmasi dan member diaktifkan.');
+}
+
+// Sync status UI updates
+function updateSyncStatusAdmin(statusText) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = statusText;
+  el.title = `Sinkronisasi: ${statusText}`;
+  // update class
+  el.classList.remove('sync-ok','sync-warn','sync-off');
+  const t = (statusText||'').toLowerCase();
+  if (t.includes('tersinkron') || t.includes('terhubung') || t.includes('terhubung')) el.classList.add('sync-ok');
+  else if (t.includes('connect') || t.includes('connecting') || t.includes('connecting...') || t.includes('connecting')) el.classList.add('sync-warn');
+  else if (t.includes('local')) el.classList.add('sync-off');
+  else el.classList.add('sync-warn');
+}
+
+// Utility: open WhatsApp chat to a member's phone number
+function openWhatsAppToMember(paymentId) {
+  const p = state.payments.find(x => x.id === paymentId);
+  if (!p) { showToast('Data pembayaran tidak ditemukan.'); return; }
+  const member = state.members.find(m => m.id === p.memberId);
+  if (!member || !member.phone) { showToast('Nomor HP tidak tersedia untuk member ini.'); return; }
+  const normalize = (ph) => ph.replace(/[^0-9+]/g, '').replace(/^0/, '62').replace(/^\+/, '');
+  const phone = normalize(member.phone);
+  // build a more specific prefilled message including timestamp and payment details
+  const pad2 = n => String(n).padStart(2,'0');
+  function formatDateTime(d){
+    try{
+      const t = new Date(d);
+      const day = pad2(t.getDate());
+      const month = t.toLocaleString('id-ID', { month: 'short' });
+      const year = t.getFullYear();
+      const hh = pad2(t.getHours());
+      const mm = pad2(t.getMinutes());
+      return `${day} ${month} ${year} ${hh}:${mm}`;
+    }catch(e){ return String(d); }
+  }
+  const paymentDate = p.date || '';
+  const now = formatDateTime(new Date());
+  const pd = formatDateTime(paymentDate);
+  const pkg = (p.type === 'Pendaftaran' && p.note) ? p.note : (p.type || '');
+  const parts = [];
+  parts.push(`Halo ${member.name || ''},`);
+  parts.push(`Saya Admin TWINS. Kami melihat ada transaksi *${p.type}*${pkg? ` (${pkg})` : ''} untuk akun Anda.`);
+  parts.push(`Jumlah: ${formatRp(p.amount)}; Tanggal transaksi: ${pd}`);
+  parts.push(`ID Pembayaran: ${p.id}`);
+  parts.push(`Pesan ini dikirim: ${now}`);
+  parts.push(`Mohon konfirmasi atau kirim bukti transfer jika belum terunggah. Terima kasih.`);
+  const text = encodeURIComponent(parts.join('\n'));
+  const url = `https://wa.me/${phone}?text=${text}`;
+  window.open(url, '_blank');
+}
+
+// Simple HTML escape if needed (used for title attributes)
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// show connected/disconnected based on Firebase readiness and last shared time
+function refreshAdminSyncStatus() {
+  try {
+    const bridge = getFirebaseBridge();
+    if (!bridge) {
+      updateSyncStatusAdmin('Local only');
+      return;
+    }
+    if (!window.twinsFirebaseReady) {
+      updateSyncStatusAdmin('Connecting...');
+      return;
+    }
+    // if we have saved signature/time
+    const last = state.sharedUpdatedAt || 0;
+    if (last) {
+      const ago = Math.round((Date.now() - last) / 1000);
+      updateSyncStatusAdmin('Tersinkron ' + (ago < 60 ? ago + 's' : Math.round(ago/60) + 'm') + ' lalu');
+    } else {
+      updateSyncStatusAdmin('Terhubung');
+    }
+  } catch (e) { console.warn(e); }
 }
 function openPaymentModal(){state.editingPaymentId=null;populateMemberSelect('payMember',null);document.getElementById('payType').value='Bulanan';document.getElementById('payAmount').value='';document.getElementById('payDate').value=new Date().toISOString().slice(0,10);document.getElementById('payStatus').value='Lunas';document.getElementById('payNote').value='';document.getElementById('paymentModalTitle').textContent='Catat Pembayaran';document.getElementById('paymentModal').classList.remove('hidden');}
 function openProofPreview(paymentId){
@@ -1175,11 +1555,14 @@ function renderSettings(){
   set('cfgTransferName',    pcfg.transferName    || '');
   set('cfgTransferNote',    pcfg.transferNote    || '');
   set('cfgQrisNote',        pcfg.qrisNote        || '');
+  set('cfgInviteLink',      INVITE_LINK);
   set('cfgWaTemplateTransfer', pcfg.waTemplateTransfer || '');
   set('cfgWaTemplateQris',     pcfg.waTemplateQris     || '');
 
   // Render QRIS preview
   _renderQrisPreview(pcfg.qrisImageBase64 || '');
+  // Render invite QR preview
+  _renderInviteQrPreview(INVITE_LINK);
 
   // Web config
   renderWebSettings();
@@ -1258,7 +1641,49 @@ function savePaymentConfig() {
   state.paymentConfig.waTemplateQris    = get('cfgWaTemplateQris');
   // qrisImageBase64 sudah disimpan langsung saat upload, tidak perlu diambil lagi
   saveState();
+  _renderInviteQrPreview(INVITE_LINK);
   showToast('✅ Pengaturan pembayaran & WA disimpan');
+}
+
+function copyInviteLink() {
+  const value = INVITE_LINK;
+  navigator.clipboard.writeText(value).then(() => {
+    showToast('✅ Link undangan klien disalin');
+  }).catch(() => {
+    showToast('Gagal menyalin link. Salin manual.');
+  });
+}
+
+function _renderInviteQrPreview(url) {
+  const img = document.getElementById('inviteQrImage');
+  const placeholder = document.getElementById('inviteQrPlaceholder');
+  if (!img || !placeholder) return;
+  if (url) {
+    img.src = 'https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=' + encodeURIComponent(url) + '&chld=L|2';
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+}
+
+function downloadInviteQr(){
+  const url = INVITE_LINK;
+  const qrUrl = 'https://chart.googleapis.com/chart?cht=qr&chs=600x600&chl=' + encodeURIComponent(url) + '&chld=L|2';
+  fetch(qrUrl).then(r=>r.blob()).then(blob=>{
+    const a = document.createElement('a');
+    const objUrl = URL.createObjectURL(blob);
+    a.href = objUrl;
+    a.download = 'twins-invite-qr.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objUrl);
+  }).catch(()=>{
+    window.open(qrUrl,'_blank');
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -1495,9 +1920,21 @@ function renderPackages(){
   const list=document.getElementById('packageList');if(!list)return;
   list.innerHTML='';
   (state.packages||[]).forEach(p=>{
+    const status = p.status || (p.popular ? 'popular' : 'none');
+    const statusLabel = status === 'popular'
+      ? '⭐ Paling Populer'
+      : status === 'recommended'
+      ? '✨ Rekomendasi'
+      : status === 'exclusive'
+      ? '🔒 Eksklusif'
+      : '';
     const div=document.createElement('div');div.className='item-box';
     div.innerHTML=`<div class="item-row">
-      <div style="flex:1"><strong>${p.name}</strong>&nbsp;<strong class="text-positive">${formatRp(p.price)}/bln</strong><br><small class="text-muted">${p.desc||''}</small></div>
+      <div style="flex:1">
+        <strong>${p.name}</strong>&nbsp;<strong class="text-positive">${formatRp(p.price)}/bln</strong>
+        ${statusLabel ? `<span class="text-positive" style="font-size:.75rem;margin-left:8px">${statusLabel}</span>` : ''}
+        <br><small class="text-muted">${p.desc||''}</small>
+      </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
         <button class="mini-btn" onclick="editPackage(${p.id})">Edit</button>
         <button class="mini-btn danger-btn" onclick="deletePackage(${p.id})">Hapus</button>
@@ -1506,15 +1943,42 @@ function renderPackages(){
     list.appendChild(div);
   });
 }
-function openPackageModal(){state.editingPackageId=null;['pkgName','pkgDesc'].forEach(id=>document.getElementById(id).value='');document.getElementById('pkgPrice').value='';document.getElementById('packageModalTitle').textContent='Tambah Paket';document.getElementById('packageModal').classList.remove('hidden');}
+function openPackageModal(){
+  state.editingPackageId=null;
+  ['pkgName','pkgDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pkgPrice').value='';
+  Array.from(document.getElementsByName('pkgStatus')).forEach(r=>r.checked = r.value === 'none');
+  document.getElementById('packageModalTitle').textContent='Tambah Paket';
+  document.getElementById('packageModal').classList.remove('hidden');
+}
 function closePackageModal(){document.getElementById('packageModal').classList.add('hidden');}
-function editPackage(id){const p=state.packages.find(x=>x.id===id);if(!p)return;state.editingPackageId=id;document.getElementById('pkgName').value=p.name;document.getElementById('pkgPrice').value=p.price;document.getElementById('pkgDesc').value=p.desc||'';document.getElementById('packageModalTitle').textContent='Edit Paket';document.getElementById('packageModal').classList.remove('hidden');}
+function editPackage(id){
+  const p=state.packages.find(x=>x.id===id);
+  if(!p)return;
+  state.editingPackageId=id;
+  document.getElementById('pkgName').value=p.name;
+  document.getElementById('pkgPrice').value=p.price;
+  document.getElementById('pkgDesc').value=p.desc||'';
+  const status = p.status || (p.popular ? 'popular' : 'none');
+  Array.from(document.getElementsByName('pkgStatus')).forEach(r=>r.checked = r.value === status);
+  document.getElementById('packageModalTitle').textContent='Edit Paket';
+  document.getElementById('packageModal').classList.remove('hidden');
+}
 function savePackage(){
-  const name=document.getElementById('pkgName').value.trim();const price=parseInt(document.getElementById('pkgPrice').value)||0;const desc=document.getElementById('pkgDesc').value.trim();
+  const name=document.getElementById('pkgName').value.trim();
+  const price=parseInt(document.getElementById('pkgPrice').value)||0;
+  const desc=document.getElementById('pkgDesc').value.trim();
+  const status = Array.from(document.getElementsByName('pkgStatus')).find(r=>r.checked)?.value || 'none';
+  const popular = status === 'popular';
   if(!name||!price){showToast('Nama dan harga wajib diisi');return;}
   if(!state.packages)state.packages=[];
-  if(state.editingPackageId){state.packages=state.packages.map(p=>p.id===state.editingPackageId?{...p,name,price,desc}:p);showToast('Paket diperbarui');}
-  else{state.packages.push({id:Date.now(),name,price,desc});showToast('Paket ditambahkan');}
+  if(state.editingPackageId){
+    state.packages=state.packages.map(p=>p.id===state.editingPackageId?{...p,name,price,desc,status,popular}:p);
+    showToast('Paket diperbarui');
+  } else {
+    state.packages.push({id:Date.now(),name,price,desc,status,popular});
+    showToast('Paket ditambahkan');
+  }
   saveState();closePackageModal();renderPackages();
 }
 async function deletePackage(id){const ok=await showConfirm({title:'Hapus Paket',message:'Paket ini akan dihapus.',okLabel:'Ya, Hapus'});if(!ok)return;state.packages=state.packages.filter(x=>x.id!==id);saveState();renderPackages();showToast('Paket dihapus');}
@@ -1947,24 +2411,11 @@ function checkNotifications() {
 // STRUKTUR ORGANISASI
 // ══════════════════════════════════════════════
 
-// Default org data
-if (!defaultState.orgMembers) {
-  defaultState.orgMembers = [
-    { id: 1, name: 'Budi Santoso, S.Pd., M.Or.', title: 'Head Coach', spec: 'Strength & Conditioning', level: 'head',   parentId: null, phone: '081111111111' },
-    { id: 2, name: 'Rina Kusuma, S.Or.',         title: 'Senior Coach',  spec: 'Cardio & Endurance',   level: 'senior', parentId: 1,    phone: '082222222222' },
-    { id: 3, name: 'Dion Prasetyo, A.Md.',       title: 'Senior Coach',  spec: 'Functional Training',  level: 'senior', parentId: 1,    phone: '083333333333' },
-    { id: 4, name: 'Tari Wulandari',             title: 'Co-Coach',      spec: 'Yoga & Flexibility',   level: 'coach',  parentId: 2,    phone: '084444444444' },
-    { id: 5, name: 'Rizky Aditya',               title: 'Co-Coach',      spec: 'Bodybuilding',         level: 'coach',  parentId: 2,    phone: '085555555555' },
-    { id: 6, name: 'Siti Nuraini',               title: 'Trainer',       spec: 'Group Class',          level: 'coach',  parentId: 3,    phone: '086666666666' },
-    { id: 7, name: 'Admin TWINS',                title: 'Staff Admin',   spec: 'Administrasi & Keuangan', level: 'staff', parentId: 1, phone: '087777777777' }
-  ];
-}
-
 function renderOrgChart() {
   const container = document.getElementById('orgChartContainer');
   if (!container) return;
 
-  const members = normalizeOrgMembers(state.orgMembers || defaultState.orgMembers || []);
+  const members = Array.isArray(state.orgMembers) ? normalizeOrgMembers(state.orgMembers) : [];
   if (!members || !members.length) {
     container.innerHTML = '<p class="empty-state">Belum ada data organisasi. Klik "+ Tambah Anggota" untuk memulai.</p>';
     return;
@@ -2090,8 +2541,8 @@ function closeOrgModal() {
 }
 
 function editOrgMember(id) {
-  // Pastikan state.orgMembers terisi dari data default jika belum ada
-  if (!state.orgMembers) state.orgMembers = [...defaultState.orgMembers];
+  // Gunakan state.orgMembers apa adanya — jika kosong, tetap kosong
+  if (!Array.isArray(state.orgMembers)) state.orgMembers = [];
   const members = state.orgMembers;
   const m = members.find(x => x.id === id);
   if (!m) return;
@@ -2124,7 +2575,7 @@ function editOrgMember(id) {
 function populateOrgParentSelect(selectedId, excludeId) {
   const sel = document.getElementById('orgParent');
   if (!sel) return;
-  const members = state.orgMembers || defaultState.orgMembers || [];
+  const members = Array.isArray(state.orgMembers) ? state.orgMembers : [];
   sel.innerHTML = '<option value="">— Tidak ada (posisi puncak) —</option>';
   members.filter(m => m.id !== excludeId).forEach(m => {
     const opt = document.createElement('option');
@@ -2146,7 +2597,8 @@ function saveOrgMember() {
 
   if (!name || !title) { showToast('Nama dan jabatan wajib diisi'); return; }
 
-  if (!state.orgMembers) state.orgMembers = normalizeOrgMembers(defaultState.orgMembers);
+  // Jika state.orgMembers belum ada, inisialisasi dengan array kosong (tidak fallback ke default)
+  if (!Array.isArray(state.orgMembers)) state.orgMembers = [];
   if (state.editingOrgId && parentId === state.editingOrgId) {
     showToast('Atasan tidak boleh memilih dirinya sendiri');
     return;
@@ -2203,8 +2655,8 @@ function clearOrgPhoto() {
 }
 
 async function deleteOrgMember(id) {
-  // Pastikan state.orgMembers terisi dari data default jika belum ada
-  if (!state.orgMembers) state.orgMembers = [...defaultState.orgMembers];
+  // Jika state.orgMembers tidak ada, inisialisasi dengan array kosong
+  if (!Array.isArray(state.orgMembers)) state.orgMembers = [];
   const m = state.orgMembers.find(x => x.id === id);
   if (!m) return;
   const ok = await showConfirm({
@@ -2234,6 +2686,7 @@ function render(){
   renderDashboard();
   renderLocations();
   renderMembers();
+  renderMembership();
   renderPayments();
   renderSchedules();
   renderNotes();
@@ -2257,6 +2710,23 @@ document.addEventListener('click', e => {
   if (closeFns[e.target.id]) closeFns[e.target.id]();
 });
 
+// ── Session Restoration saat Page Load ──
+function restoreSessionFromStorage() {
+  try {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) {
+      const user = JSON.parse(saved);
+      if (user && user.email && user.id) {
+        currentUser = user;
+        return true;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to restore session', e);
+  }
+  return false;
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
   loadState();
@@ -2265,7 +2735,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Cek sesi tersimpan — restore tanpa harus login ulang setelah refresh
   let sessionRestored = false;
   try {
-    const savedUser = sessionStorage.getItem('twinsUser');
+    const savedUser = sessionStorage.getItem(SESSION_KEY);
     if (savedUser) {
       currentUser = JSON.parse(savedUser);
       const loginPage2 = document.getElementById('loginPage');
@@ -2282,6 +2752,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e) {
     console.warn('Session restore failed', e);
+  }
+
+  // Subscribe ke Firebase jika sudah login (untuk real-time sync)
+  if (currentUser && !firebaseStateUnsubscribe) {
+    subscribeToFirebaseChanges();
   }
 
   // Pastikan login page selalu tampil jika belum ada session
@@ -2311,6 +2786,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       render();
       if (currentUser) applyRoleUI();
     }
+      try { refreshAdminSyncStatus(); } catch(e){}
   });
 
   // Enter key on login
