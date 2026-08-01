@@ -85,10 +85,87 @@ function doLogout() {
   });
 }
 
-// ── Welcome Overlay ── (dinonaktifkan - langsung masuk dashboard)
+// ── Welcome Overlay ──
 function showLoginWelcome(userName, userRole, onDone) {
-  // Langsung panggil onDone tanpa animasi splash
-  onDone();
+  const splash = document.createElement('div');
+  splash.id = 'welcomeSplash';
+  splash.innerHTML = `
+    <div class="splash-orb splash-orb-1"></div>
+    <div class="splash-orb splash-orb-2"></div>
+    <div class="splash-orb splash-orb-3"></div>
+    <div class="splash-ripple"></div>
+    <div class="splash-ripple"></div>
+    <div class="splash-ripple"></div>
+    <div class="splash-ripple"></div>
+    <div class="splash-content">
+      <div class="splash-logo-wrap" id="si-logo">
+        <img src="./logo.jpeg" alt="TWINS Logo" />
+      </div>
+      <div class="splash-brand" id="si-brand">TWINS</div>
+      <div class="splash-tagline" id="si-tagline">Platform Pelatihan Renang</div>
+      <div class="splash-divider" id="si-divider"></div>
+      <div class="splash-welcome" id="si-welcome">
+        <p class="splash-welcome-label">Selamat datang,</p>
+        <p class="splash-welcome-name">${userName || 'Admin'}</p>
+        <span class="splash-welcome-role">&#9679; ${userRole || 'Administrator'}</span>
+      </div>
+      <div class="splash-progress-wrap" id="si-progress">
+        <div class="splash-progress-bar" id="splashProgressBar"></div>
+      </div>
+      <p class="splash-loading-text" id="si-hint">Memuat dashboard...</p>
+    </div>
+  `;
+  document.body.appendChild(splash);
+
+  // Pre-hint GPU compositing supaya animasi tidak patah saat start
+  splash.style.willChange = 'opacity, transform';
+
+  // ── Stagger entrance: setiap elemen muncul berurutan ──
+  const items = [
+    { id: 'si-logo',     delay: 120 },
+    { id: 'si-brand',    delay: 260 },
+    { id: 'si-tagline',  delay: 370 },
+    { id: 'si-divider',  delay: 480 },
+    { id: 'si-welcome',  delay: 580 },
+    { id: 'si-progress', delay: 720 },
+    { id: 'si-hint',     delay: 800 },
+  ];
+  items.forEach(({ id, delay }) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('si');
+    }, delay);
+  });
+
+  // ── Start progress bar ──
+  setTimeout(() => {
+    const bar = document.getElementById('splashProgressBar');
+    if (bar) {
+      bar.classList.add('running');
+      // Double rAF: pastikan transisi diambil oleh browser
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        bar.style.width = '100%';
+      }));
+    }
+  }, 760);
+
+  // ── EXIT ──
+  const SHOW_DURATION = 2800;   // berapa lama tampil sebelum exit
+  const EXIT_DURATION = 700;    // harus cocok dengan duration di CSS
+
+  setTimeout(() => {
+    // Reset will-change sebelum exit agar GPU tidak over-composite
+    splash.style.willChange = 'auto';
+    // Beri satu frame sebelum addClass supaya browser sempat commit
+    requestAnimationFrame(() => {
+      splash.classList.add('splash-exit');
+    });
+
+    setTimeout(() => {
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+      onDone();
+    }, EXIT_DURATION + 80);
+  }, SHOW_DURATION);
 }
 
 // ── Role UI ──

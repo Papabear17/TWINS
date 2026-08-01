@@ -5,7 +5,7 @@
 const STORAGE_KEY = 'twinsData_v3';
 const THEME_KEY   = 'twinsTheme';
 const SESSION_KEY = 'twinsUserSession';
-const INVITE_LINK = 'https://wabsitetwins.vercel.app/';
+const INVITE_LINK = 'https://wab-twins.vercel.app/';
 
 // ── Demo Accounts ──
 const DEMO_ACCOUNTS = [
@@ -46,7 +46,8 @@ const defaultState = {
   },
   webConfig: {},
   webMedia: {},
-  webGallery: []
+  webGallery: [],
+  webTestimonials: []
 };
 
 let state = JSON.parse(JSON.stringify(defaultState));
@@ -78,6 +79,7 @@ function mergeAppState(parsed = {}) {
     packages:   resolveArray('packages'),
     orgMembers: resolveArray('orgMembers'),
     webGallery: resolveArray('webGallery'),
+    webTestimonials: resolveArray('webTestimonials'),
     // Objects — merge dengan default sebagai fallback
     config:        { ...base.config,        ...(parsed.config        || {}) },
     paymentConfig: { ...base.paymentConfig, ...(parsed.paymentConfig || {}) },

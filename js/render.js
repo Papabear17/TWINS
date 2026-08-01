@@ -961,6 +961,60 @@ function getWebConfigDefaults() {
   };
 }
 
+async function resetAllData() {
+  const ok = await showConfirm({
+    title: '⚠ Reset Semua Data',
+    message: 'Ini akan menghapus SEMUA data (member, lokasi, pembayaran, jadwal, catatan, orgchart) dari Firebase dan browser.\n\nAkun admin login dan paket tidak ikut terhapus.\n\nTindakan ini TIDAK BISA DIBATALKAN.',
+    okLabel: 'Ya, Hapus Semua',
+    type: 'danger'
+  });
+  if (!ok) return;
+
+  // Simpan data yang perlu dipertahankan
+  const adminUsers = window.__twinsState.cloneStateData(window.__twinsState.state.adminUsers || window.__twinsState.DEMO_ACCOUNTS);
+  const packages   = window.__twinsState.cloneStateData(window.__twinsState.state.packages   || window.__twinsState.defaultState.packages);
+  const config     = window.__twinsState.cloneStateData(window.__twinsState.state.config     || window.__twinsState.defaultState.config);
+  const paymentConfig = window.__twinsState.cloneStateData(window.__twinsState.state.paymentConfig || window.__twinsState.defaultState.paymentConfig);
+
+  // Build state bersih
+  const cleanState = {
+    ...window.__twinsState.defaultState,
+    adminUsers,
+    packages,
+    config,
+    paymentConfig,
+    locations:  [],
+    members:    [],
+    payments:   [],
+    schedules:  [],
+    notes:      [],
+    orgMembers: [],
+    webGallery: [],
+    webConfig:  {},
+    webMedia:   {},
+    sharedUpdatedAt: Date.now()
+  };
+
+  // Terapkan ke state
+  window.__twinsState.state = cleanState;
+
+  // Hapus localStorage dan tulis ulang bersih
+  try { localStorage.removeItem(window.__twinsState.STORAGE_KEY); } catch(e) {}
+  window.__twinsState.persistLocalState();
+
+  // Push ke Firebase
+  const bridge = window.__twinsState.getFirebaseBridge();
+  if (bridge) {
+    try {
+      const { adminUsers: _au, ...payload } = cleanState;
+      await bridge.saveSharedState(payload);
+    } catch(e) { console.warn('Reset Firebase failed', e); }
+  }
+
+  render();
+  showToast('✅ Semua data berhasil direset. Admin dan paket tetap ada.');
+}
+
 function renderSettings(){
   renderAdminUsers();
   renderPackages();
@@ -1119,6 +1173,9 @@ function renderWebSettings() {
 
   // Render galeri admin
   renderGalleryAdmin();
+
+  // Render testimonials admin
+  renderTestimonialsAdmin();
 }
 
 function renderGalleryAdmin() {
@@ -1645,7 +1702,7 @@ function refreshAdminSyncStatus() {
 
 /* ── Invite QR ── */
 function _renderInviteQr() {
-  const url = window.__twinsState.INVITE_LINK || 'https://wabsitetwins.vercel.app/';
+  const url = window.__twinsState.INVITE_LINK || 'https://wab-twins.vercel.app/';
   const img = document.getElementById('inviteQrImage');
   const placeholder = document.getElementById('inviteQrPlaceholder');
   const container = document.getElementById('inviteQrPreview');
@@ -1702,12 +1759,12 @@ function _renderInviteQr() {
 }
 
 function copyInviteLink() {
-  const value = window.__twinsState.INVITE_LINK || 'https://wabsitetwins.vercel.app/';
+  const value = window.__twinsState.INVITE_LINK || 'https://wab-twins.vercel.app/';
   navigator.clipboard.writeText(value).then(() => showToast('✅ Link undangan klien disalin')).catch(() => showToast('Gagal menyalin link.'));
 }
 
 function downloadInviteQr() {
-  const url = window.__twinsState.INVITE_LINK || 'https://wabsitetwins.vercel.app/';
+  const url = window.__twinsState.INVITE_LINK || 'https://wab-twins.vercel.app/';
 
   // Buat QR besar (600px) khusus untuk download
   const exportSize = 600;
@@ -1825,3 +1882,110 @@ function render() {
 
 window.__renderAll = render;
 window.__app = { applyAppInfo, render };
+
+/* ══════════════════════════════════
+   TESTIMONIALS ADMIN
+   ══════════════════════════════════ */
+var _editingTestimonialId = null;
+
+function renderTestimonialsAdmin() {
+  const list = document.getElementById('testimonialsAdminList');
+  const counter = document.getElementById('testimonialsCount');
+  if (!list) return;
+
+  const items = window.__twinsState.state.webTestimonials || [];
+  if (counter) counter.textContent = items.length;
+
+  if (!items.length) {
+    list.innerHTML = '<p class="text-muted" style="font-size:.85rem">Belum ada testimonial. Klik "+ Tambah Testimonial" untuk menambahkan.</p>';
+    return;
+  }
+
+  list.innerHTML = items.map((t, i) => {
+    const stars = '★'.repeat(t.rating || 5) + '☆'.repeat(5 - (t.rating || 5));
+    return `
+    <div class="item-box" style="margin-bottom:10px;">
+      <div class="item-row" style="align-items:flex-start;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+            <div class="user-avatar" style="width:32px;height:32px;font-size:.75rem;flex-shrink:0">${(t.name||'?').charAt(0).toUpperCase()}</div>
+            <strong style="font-size:.9rem">${t.name || '—'}</strong>
+            <small class="text-muted">${t.role || ''}</small>
+            ${t.featured ? '<span style="background:var(--primary,#1a6bc4);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:99px;">Unggulan</span>' : ''}
+          </div>
+          <div style="color:#f59e0b;font-size:.85rem;margin-bottom:4px">${stars}</div>
+          <p style="font-size:.85rem;color:var(--text-2,#94a3b8);margin:0;font-style:italic">"${t.text || ''}"</p>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="mini-btn" onclick="openTestimonialModal(${i})">Edit</button>
+          <button class="mini-btn danger-btn" onclick="deleteTestimonial(${i})">Hapus</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openTestimonialModal(idx) {
+  const modal = document.getElementById('testimonialModal');
+  if (!modal) return;
+
+  if (typeof idx === 'number') {
+    _editingTestimonialId = idx;
+    const t = (window.__twinsState.state.webTestimonials || [])[idx];
+    if (t) {
+      document.getElementById('tmnlName').value    = t.name || '';
+      document.getElementById('tmnlRole').value    = t.role || '';
+      document.getElementById('tmnlText').value    = t.text || '';
+      document.getElementById('tmnlRating').value  = t.rating || 5;
+      document.getElementById('tmnlFeatured').value = t.featured ? '1' : '0';
+    }
+    document.getElementById('testimonialModalTitle').textContent = 'Edit Testimonial';
+  } else {
+    _editingTestimonialId = null;
+    ['tmnlName','tmnlRole','tmnlText'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('tmnlRating').value   = '5';
+    document.getElementById('tmnlFeatured').value = '0';
+    document.getElementById('testimonialModalTitle').textContent = 'Tambah Testimonial';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeTestimonialModal() {
+  const modal = document.getElementById('testimonialModal');
+  if (modal) modal.style.display = 'none';
+  _editingTestimonialId = null;
+}
+
+function saveTestimonial() {
+  const name     = document.getElementById('tmnlName').value.trim();
+  const role     = document.getElementById('tmnlRole').value.trim();
+  const text     = document.getElementById('tmnlText').value.trim();
+  const rating   = parseInt(document.getElementById('tmnlRating').value) || 5;
+  const featured = document.getElementById('tmnlFeatured').value === '1';
+
+  if (!name || !text) { showToast('Nama dan isi testimoni wajib diisi'); return; }
+
+  if (!window.__twinsState.state.webTestimonials) window.__twinsState.state.webTestimonials = [];
+
+  if (_editingTestimonialId !== null) {
+    window.__twinsState.state.webTestimonials[_editingTestimonialId] = { name, role, text, rating, featured };
+    showToast('Testimonial diperbarui');
+  } else {
+    window.__twinsState.state.webTestimonials.push({ name, role, text, rating, featured });
+    showToast('Testimonial ditambahkan');
+  }
+
+  window.__twinsState.saveState();
+  closeTestimonialModal();
+  renderTestimonialsAdmin();
+}
+
+async function deleteTestimonial(idx) {
+  const ok = await showConfirm({ title: 'Hapus Testimonial', message: 'Testimonial ini akan dihapus dari landing page.', okLabel: 'Ya, Hapus' });
+  if (!ok) return;
+  (window.__twinsState.state.webTestimonials || []).splice(idx, 1);
+  window.__twinsState.saveState();
+  renderTestimonialsAdmin();
+  showToast('Testimonial dihapus');
+}

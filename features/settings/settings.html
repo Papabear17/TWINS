@@ -1,4 +1,4 @@
-<script>
+﻿<script>
 (function () {
   if (window.top === window.self) {
     const path = location.pathname.split('/');
@@ -327,7 +327,7 @@
                         <label>Link Undangan Klien</label>
                         <input
                           id="cfgInviteLink"
-                          value="https://wabsitetwins.vercel.app/"
+                          value="https://wab-twins.vercel.app/"
                           readonly
                         />
                         <small class="text-muted"
@@ -887,6 +887,97 @@
                     <p class="text-muted" style="font-size:.85rem">Belum ada foto galeri.</p>
                   </div>
                   <small class="text-muted" style="display:block;margin-top:10px">Format JPG/PNG. Maks 3MB per foto. Bisa tambah caption untuk tiap foto.</small>
+                </div>
+              </div>
+
+              <!-- ▶▶ Kelompok 6: Testimonial ▶▶ -->
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 6</p>
+                    <h3>Testimonial Landing Page</h3>
+                  </div>
+                  <p>Kelola ulasan dan testimoni dari member yang ditampilkan di bagian "Kata Mereka" pada landing page.</p>
+                </div>
+                <div class="card settings-info-card">
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+                    <h3 style="margin:0">Daftar Testimonial (<span id="testimonialsCount">0</span>)</h3>
+                    <button onclick="openTestimonialModal()">+ Tambah Testimonial</button>
+                  </div>
+                  <div id="testimonialsAdminList">
+                    <p class="text-muted" style="font-size:.85rem">Belum ada testimonial. Klik "+ Tambah Testimonial" untuk menambahkan.</p>
+                  </div>
+                  <small class="text-muted" style="display:block;margin-top:10px">Testimonial akan langsung tampil di landing page setelah disimpan.</small>
+                </div>
+              </div>
+
+              <!-- Modal Tambah/Edit Testimonial -->
+              <div id="testimonialModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+                <div style="background:var(--surface,#1e293b);border-radius:16px;padding:28px;width:100%;max-width:480px;margin:16px;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                    <h3 style="margin:0;font-size:1.05rem;" id="testimonialModalTitle">Tambah Testimonial</h3>
+                    <button onclick="closeTestimonialModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;">&times;</button>
+                  </div>
+                  <div class="settings-form">
+                    <div class="form-group">
+                      <label>Nama</label>
+                      <input id="tmnlName" placeholder="Contoh: Rina S." />
+                    </div>
+                    <div class="form-group">
+                      <label>Peran / Keterangan</label>
+                      <input id="tmnlRole" placeholder="Contoh: Orang tua member · Bukit Dago" />
+                    </div>
+                    <div class="form-group">
+                      <label>Isi Testimoni</label>
+                      <textarea id="tmnlText" rows="4" placeholder="Tulis testimoni di sini..."></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label>Rating (1–5 bintang)</label>
+                      <select id="tmnlRating">
+                        <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4)</option>
+                        <option value="3">⭐⭐⭐ (3)</option>
+                        <option value="2">⭐⭐ (2)</option>
+                        <option value="1">⭐ (1)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Tandai sebagai Unggulan</label>
+                      <select id="tmnlFeatured">
+                        <option value="0">Tidak</option>
+                        <option value="1">Ya (tampil di tengah, lebih besar)</option>
+                      </select>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+                      <button onclick="closeTestimonialModal()" style="background:var(--surface-2,#334155);color:var(--text-1,#f1f5f9);border:none;padding:10px 20px;border-radius:8px;cursor:pointer;">Batal</button>
+                      <button onclick="saveTestimonial()">Simpan</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ▶▶ Kelompok 7: Danger Zone ▶▶ -->
+              <div class="settings-group" style="border:2px solid var(--danger,#ef4444);border-radius:12px;padding:0 0 4px;">
+                <div class="settings-group-head" style="padding:20px 24px 16px;border-bottom:1px solid rgba(239,68,68,.2);">
+                  <div>
+                    <p class="settings-group-eyebrow" style="color:var(--danger,#ef4444)">⚠ Danger Zone</p>
+                    <h3 style="color:var(--danger,#ef4444)">Reset &amp; Hapus Data</h3>
+                  </div>
+                  <p>Tindakan ini <strong>tidak bisa dibatalkan</strong>. Semua data akan dihapus dari Firebase dan browser sekaligus.</p>
+                </div>
+                <div class="card settings-info-card" style="margin:16px;border:1px solid rgba(239,68,68,.3);">
+                  <h3>Reset Data Semua</h3>
+                  <p class="text-muted" style="font-size:.85rem;margin-bottom:16px">
+                    Hapus seluruh data member, lokasi, pembayaran, jadwal, catatan, dan struktur organisasi dari Firebase dan localStorage.
+                    Akun admin login dan paket tidak ikut dihapus.
+                  </p>
+                  <button
+                    class="mini-btn danger-btn"
+                    style="padding:10px 20px;font-size:.9rem"
+                    onclick="resetAllData()"
+                  >
+                    🗑 Reset Semua Data
+                  </button>
                 </div>
               </div>
 
