@@ -1,0 +1,150 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿      <aside id="sidebar" class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">
+            <img
+              src="./logo.jpeg"
+              alt="TWINS Logo"
+              class="brand-logo-img"
+            />
+          </div>
+          <div class="brand-text">
+            <h2>TWINS</h2>
+            <p id="sidebarRoleLabel">Admin</p>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Ringkasan</p>
+          <button
+            class="nav-btn active"
+            data-section="dashboard"
+            title="Dashboard"
+            onclick="showSection('dashboard')"
+          >
+            <span class="nav-icon">▶</span><span>Dashboard</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="orgchart"
+            title="Struktur Organisasi"
+            onclick="showSection('orgchart')"
+          >
+            <span class="nav-icon">▶</span><span>Struktur Organisasi</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Operasional</p>
+          <button
+            class="nav-btn"
+            data-section="locations"
+            title="Lokasi & Slot"
+            onclick="showSection('locations')"
+          >
+            <span class="nav-icon">▶</span><span>Lokasi &amp; Slot</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="schedule"
+            title="Jadwal Latihan"
+            onclick="showSection('schedule')"
+          >
+            <span class="nav-icon">▶</span><span>Jadwal Latihan</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Member</p>
+          <button
+            class="nav-btn"
+            data-section="membership"
+            title="Keanggotaan"
+            onclick="showSection('membership')"
+          >
+            <span class="nav-icon">▶</span><span>Keanggotaan</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="members"
+            title="Pendaftaran Member"
+            onclick="showSection('members')"
+          >
+            <span class="nav-icon">▶</span><span>Pendaftaran</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="payments"
+            title="Pembayaran"
+            onclick="showSection('payments')"
+          >
+            <span class="nav-icon">▶</span><span>Pembayaran</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="reports"
+            title="Laporan"
+            onclick="showSection('reports')"
+          >
+            <span class="nav-icon">▶</span><span>Laporan</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Aktivitas</p>
+          <button
+            class="nav-btn"
+            data-section="notes"
+            title="Catatan & Evaluasi"
+            onclick="showSection('notes')"
+          >
+            <span class="nav-icon">▶</span><span>Catatan &amp; Evaluasi</span>
+          </button>
+          <button
+            class="nav-btn"
+            data-section="progress"
+            title="Progress Member"
+            onclick="showSection('progress')"
+          >
+            <span class="nav-icon">▶</span><span>Progress Member</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-group-label">Konfigurasi</p>
+          <button
+            class="nav-btn admin-only"
+            data-section="settings"
+            title="Pengaturan (Admin)"
+            onclick="showSection('settings')"
+          >
+            <span class="nav-icon">▶</span><span>Pengaturan</span>
+          </button>
+        </div>
+
+        <div class="nav-spacer"></div>
+        <div class="nav-divider"></div>
+
+        <button class="nav-btn nav-btn-logout" title="Keluar dari TWINS" onclick="doLogout()">
+          <span class="nav-icon">▶</span><span>Keluar</span>
+        </button>
+      </aside>
+      <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+        onclick="toggleMobileSidebar()"
+      ></div>

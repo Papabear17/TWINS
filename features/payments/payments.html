@@ -1,0 +1,83 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="paymentsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="metrics-grid" style="margin-bottom: 16px">
+            <div class="metric-card">
+              <p>Total Terkumpul</p>
+              <h2 id="payStatTotal">Rp 0</h2>
+              <span class="metric-change positive">Semua waktu</span>
+            </div>
+            <div class="metric-card">
+              <p>Bulan Ini</p>
+              <h2 id="payStatMonth">Rp 0</h2>
+              <span class="metric-change positive">Lunas</span>
+            </div>
+            <div class="metric-card">
+              <p>Menunggak</p>
+              <h2 id="payStatOverdue">0</h2>
+              <span class="metric-change negative">Belum bayar</span>
+            </div>
+            <div class="metric-card">
+              <p>Pendaftaran Baru</p>
+              <h2 id="payStatNew">0</h2>
+              <span class="metric-change">Bulan ini</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-head">
+              <h3>Riwayat Pembayaran</h3>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                  align-items: center;
+                "
+              >
+                <select
+                  id="payTypeFilter"
+                  class="filter-select"
+                  onchange="renderPayments()"
+                >
+                  <option value="">Semua Tipe</option>
+                  <option value="Pendaftaran">Pendaftaran</option>
+                  <option value="Bulanan">Bulanan</option>
+                </select>
+                <select
+                  id="payStatusFilter"
+                  class="filter-select"
+                  onchange="renderPayments()"
+                >
+                  <option value="">Semua Status</option>
+                  <option value="Lunas">Lunas</option>
+                  <option value="Menunggak">Menunggak</option>
+                </select>
+                <button onclick="openPaymentModal()">+ Catat Pembayaran</button>
+                <button onclick="exportPaymentCSV()" class="btn-outline">
+                  Export CSV
+                </button>
+                <button onclick="exportPaymentPDF()" class="btn-outline">
+                  Export PDF
+                </button>
+              </div>
+            </div>
+            <div id="paymentList"></div>
+          </div>
+        </section>

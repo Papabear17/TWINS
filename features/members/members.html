@@ -1,0 +1,51 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="membersSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Data Member</h3>
+              <button class="admin-only" onclick="openMemberModal()">
+                + Daftarkan Member
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="memberSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari nama atau nomor HP..."
+                oninput="renderMembers()"
+              />
+              <select
+                id="memberStatusFilter"
+                class="filter-select"
+                onchange="renderMembers()"
+              >
+                <option value="">Semua Status</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Menunggu Verifikasi Admin">
+                  Menunggu Verifikasi Admin
+                </option>
+                <option value="Tidak Aktif">Tidak Aktif</option>
+              </select>
+            </div>
+            <div id="memberList"></div>
+          </div>
+        </section>

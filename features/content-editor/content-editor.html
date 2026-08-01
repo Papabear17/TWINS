@@ -1,0 +1,40 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('admin-only') >= 0 ? path.indexOf('admin-only') : path.indexOf('web-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+
+<section class="content-editor">
+  <h2>Editor Konten (Hero / Navbar / About)</h2>
+  <form id="contentEditorForm">
+    <label>Hero Title
+      <input name="heroTitle" placeholder="Judul Hero" />
+    </label>
+    <label>Hero Tagline
+      <input name="heroTagline" placeholder="Tagline / subtitle" />
+    </label>
+    <label>Navbar Links (pisahkan dengan koma)
+      <input name="navLinks" placeholder="Tentang,Program,Paket,Kontak" />
+    </label>
+    <label>About Text
+      <textarea name="aboutText" rows="5" placeholder="Teks tentang klub..."></textarea>
+    </label>
+    <div style="margin-top:8px;">
+      <button type="submit">Simpan & Sinkronkan</button>
+      <button type="button" id="resetBtn">Reset ke Default</button>
+    </div>
+  </form>
+  <div id="editorStatus" style="margin-top:8px;color:green"></div>
+</section>
+
+<script src="../../js/content-editor.js"></script>

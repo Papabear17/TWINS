@@ -1,0 +1,98 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section id="dashboardSection" class="content-section">
+          <!-- Notification banner -->
+          <div id="notifBanner" style="display: none" class="notif-banner">
+            <span id="notifText"></span>
+            <button onclick="showSection('payments')" class="notif-action">
+              Lihat Pembayaran
+            </button>
+            <button
+              onclick="
+                document.getElementById('notifBanner').style.display = 'none'
+              "
+              class="notif-close"
+            >
+              &times;
+            </button>
+          </div>
+
+          <p class="dashboard-eyebrow">Ringkasan Platform TWINS</p>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <p>Total Member Aktif</p>
+              <h2 id="statMembers">0</h2>
+              <span class="metric-change positive">Terdaftar</span>
+            </div>
+            <div class="metric-card">
+              <p>Pendapatan Bulan Ini</p>
+              <h2 id="statRevenue">Rp 0</h2>
+              <span class="metric-change positive">Pembayaran lunas</span>
+            </div>
+            <div class="metric-card">
+              <p>Slot Tersedia</p>
+              <h2 id="statSlots">0</h2>
+              <span class="metric-change">Dari semua lokasi</span>
+            </div>
+            <div class="metric-card">
+              <p>Tagihan Menunggak</p>
+              <h2 id="statOverdue">0</h2>
+              <span class="metric-change negative">Perlu tindak</span>
+            </div>
+          </div>
+
+          <div class="charts-row" style="margin-top: 4px">
+            <div class="card">
+              <h3>Member Terbaru</h3>
+              <div id="recentMembers"></div>
+            </div>
+            <div class="card">
+              <h3>Pembayaran Terakhir</h3>
+              <div id="recentPayments"></div>
+            </div>
+            <div class="card">
+              <h3>Slot per Lokasi</h3>
+              <div id="slotSummary"></div>
+            </div>
+          </div>
+
+          <!-- Grafik Performa -->
+          <div class="charts-row" style="margin-top: 4px">
+            <div class="card">
+              <h3>Pendapatan 6 Bulan Terakhir</h3>
+              <div style="position: relative; height: 240px">
+                <canvas id="revenueChartDash"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Status Pembayaran Bulan Ini</h3>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 28px;
+                  padding: 20px 8px;
+                  min-height: 200px;
+                  flex-wrap: wrap;
+                "
+              >
+                <canvas id="payStatusChart" style="width:160px;height:160px;flex-shrink:0;"></canvas>
+                <div id="payStatusLegend" style="font-size: 0.85rem; min-width: 100px;"></div>
+              </div>
+            </div>
+          </div>
+        </section>

@@ -1,0 +1,895 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="settingsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="settings-hero">
+            <div>
+              <p class="settings-hero-eyebrow">Kontrol Platform</p>
+              <h2>Pengaturan sekarang dipisah per kelompok</h2>
+              <p class="settings-hero-copy">
+                Akun, biaya, pembayaran, identitas brand, dan media landing
+                dipisah agar tidak numpuk, lebih mudah dicari, dan lebih nyaman
+                diedit.
+              </p>
+            </div>
+            <div class="settings-hero-chips">
+              <span class="settings-chip">Akun &amp; Role</span>
+              <span class="settings-chip">Keuangan</span>
+              <span class="settings-chip">Brand &amp; Landing</span>
+            </div>
+          </div>
+
+          <div class="settings-tabs-nav">
+            <button
+              class="stab-btn active"
+              data-stab="dashboard"
+              onclick="switchSettingsTab('dashboard')"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              Dashboard &amp; Operasional
+            </button>
+            <button
+              class="stab-btn"
+              data-stab="web"
+              onclick="switchSettingsTab('web')"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+              Website &amp; Landing Page
+            </button>
+          </div>
+
+          <div id="stabDashboard" class="stab-panel">
+            <div class="settings-stack">
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 1</p>
+                    <h3>Akun, paket, dan sistem inti</h3>
+                  </div>
+                  <p>
+                    Bagian ini fokus untuk data admin, harga paket, dan
+                    konfigurasi dasar dashboard.
+                  </p>
+                </div>
+                <div class="settings-grid settings-grid--fit">
+                  <div class="card">
+                    <div class="section-head">
+                      <h3>Akun &amp; Pengguna Sistem</h3>
+                      <button onclick="openAdminUserModal()">
+                        + Tambah Akun
+                      </button>
+                    </div>
+                    <div id="adminUserList"></div>
+                  </div>
+                  <div class="card">
+                    <div class="section-head">
+                      <h3>Paket Membership</h3>
+                      <button onclick="openPackageModal()">
+                        + Tambah Paket
+                      </button>
+                    </div>
+                    <div id="packageList"></div>
+                  </div>
+                  <div class="card settings-info-card">
+                    <h3>Konfigurasi Sistem Dashboard</h3>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Nama Aplikasi</label
+                          ><input id="cfgAppName" value="Twins Swimming Club" />
+                        </div>
+                        <div class="form-group">
+                          <label>Kontak Admin (Email)</label
+                          ><input
+                            id="cfgContact"
+                            value="twinsswimmingclub@gmail.com"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Biaya Pendaftaran (Rp)</label
+                          ><input id="cfgRegFee" type="number" value="100000" />
+                        </div>
+                        <div class="form-group">
+                          <label>Batas Hari Jatuh Tempo</label
+                          ><input
+                            id="cfgDueDay"
+                            type="number"
+                            value="5"
+                            min="1"
+                            max="28"
+                          />
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: flex-end;
+                          margin-top: 8px;
+                        "
+                      >
+                        <button onclick="saveConfig()">
+                          Simpan Konfigurasi Dasar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 2</p>
+                    <h3>Pembayaran, QRIS, dan WhatsApp</h3>
+                  </div>
+                  <p>
+                    Seluruh data untuk form pendaftaran, keamanan pembayaran,
+                    dan template konfirmasi pelanggan.
+                  </p>
+                </div>
+                <div class="card settings-info-card">
+                  <h3>Pengaturan Pembayaran &amp; WhatsApp</h3>
+                  <p
+                    class="text-muted"
+                    style="font-size: 0.85rem; margin-bottom: 16px"
+                  >
+                    Atur info transfer, QRIS, dan pesan konfirmasi agar landing
+                    page langsung sinkron.
+                  </p>
+                  <div class="settings-form payment-wa-form">
+                    <div class="form-row-settings">
+                      <div class="form-group">
+                        <label>Nomor WhatsApp Admin</label>
+                        <input id="cfgWaNumber" placeholder="6281234567890" />
+                        <small class="text-muted"
+                          >Format internasional tanpa tanda +, misalnya
+                          `62812...`</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label>Judul Pesan Penenang</label>
+                        <input
+                          id="cfgReassuranceTitle"
+                          placeholder="Tenang, Pembayaranmu Aman"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Teks Penenang</label>
+                      <textarea
+                        id="cfgReassuranceText"
+                        rows="2"
+                        placeholder="TWINS platform resmi — setiap transaksi dikonfirmasi tim kami maksimal 1×24 jam."
+                      ></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label>Poin Kepercayaan</label>
+                      <textarea
+                        id="cfgTrustPoints"
+                        rows="3"
+                        placeholder="Pembayaran ke rekening resmi TWINS&#10;Konfirmasi cepat via WhatsApp&#10;Data pribadi aman &amp; rahasia"
+                      ></textarea>
+                    </div>
+                    <div class="form-row-settings">
+                      <div class="form-group">
+                        <label>Bank Transfer</label>
+                        <input id="cfgTransferBank" placeholder="BCA" />
+                      </div>
+                      <div class="form-group">
+                        <label>No. Rekening</label>
+                        <input
+                          id="cfgTransferAccount"
+                          placeholder="1234567890"
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Atas Nama</label>
+                        <input
+                          id="cfgTransferName"
+                          placeholder="TWINS Swimming Club"
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Catatan Transfer</label>
+                      <input
+                        id="cfgTransferNote"
+                        placeholder="Pastikan nominal sesuai. Simpan bukti transfer."
+                      />
+                    </div>
+                    <div class="form-row-settings">
+                      <div class="form-group">
+                        <label>Gambar QRIS</label>
+                        <div class="qris-upload-wrap">
+                          <div class="qris-preview-box" id="qrisPreviewBox">
+                            <img
+                              id="qrisPreviewImg"
+                              alt="Preview QRIS"
+                              style="
+                                display: none;
+                                max-width: 100%;
+                                max-height: 160px;
+                                object-fit: contain;
+                                border-radius: 6px;
+                              "
+                            />
+                            <div
+                              id="qrisPreviewPlaceholder"
+                              class="qris-placeholder-inner"
+                            >
+                              <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                style="color: var(--text-muted)"
+                              >
+                                <rect
+                                  x="3"
+                                  y="3"
+                                  width="18"
+                                  height="18"
+                                  rx="2"
+                                />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                              <span>Belum ada gambar QRIS</span>
+                            </div>
+                          </div>
+                          <div class="qris-upload-actions">
+                            <label class="qris-upload-btn" for="qrisFileInput">
+                              <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                              >
+                                <path
+                                  d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                                />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                              </svg>
+                              Pilih Gambar
+                              <input
+                                type="file"
+                                id="qrisFileInput"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleQrisUpload(event)"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="qrisRemoveBtn"
+                              onclick="removeQrisImage()"
+                              style="display: none"
+                            >
+                              &times; Hapus
+                            </button>
+                          </div>
+                          <small class="text-muted" style="font-size: 0.75rem"
+                            >Format JPG, PNG, atau GIF. Maks 2MB. Tersimpan
+                            lokal di browser.</small
+                          >
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Link Undangan Klien</label>
+                        <input
+                          id="cfgInviteLink"
+                          value="https://wabsitetwins.vercel.app/"
+                          readonly
+                        />
+                        <small class="text-muted"
+                          >Link ini bersifat tetap dan tidak bisa diubah. Klien akan langsung menuju landing page resmi.</small
+                        >
+                      </div>
+                    </div>
+                    <div class="form-row-settings">
+                      <div class="form-group invite-qr-group">
+                        <label>QR Link Klien</label>
+                        <div class="invite-qr-preview" id="inviteQrPreview">
+                          <img
+                            id="inviteQrImage"
+                            alt="QR Invite"
+                            style="display: none; max-width: 100%; border-radius: 8px;"
+                          />
+                          <div
+                            id="inviteQrPlaceholder"
+                            class="invite-qr-placeholder"
+                          >
+                            Isi link undangan klien untuk melihat QR.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          class="invite-qr-copy-btn"
+                          onclick="copyInviteLink()"
+                        >
+                          Salin Link Undangan
+                        </button>
+                        <button type="button" class="invite-qr-download-btn" onclick="downloadInviteQr()" style="margin-left:8px">Download QR</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Template WA — Transfer Bank</label>
+                      <textarea
+                        id="cfgWaTemplateTransfer"
+                        rows="5"
+                        placeholder="Gunakan {nama}, {paket}, {total}, {bank}, {rekening}, {atasnama}, {ref}, {metode}"
+                      ></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label>Template WA — QRIS / E-Wallet</label>
+                      <textarea id="cfgWaTemplateQris" rows="4"></textarea>
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-top: 8px;
+                      "
+                    >
+                      <button onclick="savePaymentConfig()">
+                        Simpan Pengaturan Pembayaran
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="stabWeb" class="stab-panel" style="display: none">
+            <div class="settings-stack">
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 3</p>
+                    <h3>Identitas brand &amp; informasi publik</h3>
+                  </div>
+                  <p>
+                    Informasi di sini akan dipakai untuk tampilan utama landing
+                    page, footer, dan identitas klub.
+                  </p>
+                </div>
+                <div class="settings-grid settings-grid--fit">
+                  <div class="card settings-info-card">
+                    <h3>Informasi Perusahaan</h3>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Nama Klub</label
+                          ><input
+                            id="webClubName"
+                            placeholder="Twins Swimming Club"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>Tahun Berdiri</label
+                          ><input id="webFoundedYear" placeholder="2021" />
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Tagline Hero</label
+                        ><input
+                          id="webTagline"
+                          placeholder="Klub renang profesional di Tangerang Selatan sejak 2021"
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Deskripsi About</label
+                        ><textarea
+                          id="webAboutText"
+                          rows="4"
+                          placeholder="Twins Swimming Club merupakan klub renang yang berdiri sejak tahun 2021..."
+                        ></textarea>
+                      </div>
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Kota / Alamat</label
+                          ><input
+                            id="webCity"
+                            placeholder="Tangerang Selatan, Banten"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>Email Publik</label
+                          ><input
+                            id="webEmail"
+                            placeholder="twinsswimmingclub@gmail.com"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Instagram</label
+                          ><input
+                            id="webInstagram"
+                            placeholder="@twinsswimmingclub"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>TikTok</label
+                          ><input
+                            id="webTiktok"
+                            placeholder="@twinsswimmingclub"
+                          />
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: flex-end;
+                          margin-top: 8px;
+                        "
+                      >
+                        <button onclick="saveWebConfig()">
+                          Simpan Identitas Website
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <h3>Statistik Hero Landing Page</h3>
+                    <p
+                      class="text-muted"
+                      style="font-size: 0.85rem; margin-bottom: 12px"
+                    >
+                      Angka yang tampil di bagian hero website.
+                    </p>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Jumlah Client / Member</label
+                          ><input id="webStatMembers" placeholder="100+" />
+                        </div>
+                        <div class="form-group">
+                          <label>Jumlah Coach</label
+                          ><input id="webStatCoaches" placeholder="5+" />
+                        </div>
+                        <div class="form-group">
+                          <label>Jumlah Kolam Aktif</label
+                          ><input id="webStatLocations" placeholder="3" />
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: flex-end;
+                          margin-top: 8px;
+                        "
+                      >
+                        <button onclick="saveWebConfig()">
+                          Simpan Statistik
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 4</p>
+                    <h3>Media landing page</h3>
+                  </div>
+                  <p>
+                    Upload media hero, foto program, dan foto tentang kami agar
+                    landing page tidak kosong.
+                  </p>
+                </div>
+                <div class="settings-grid">
+                  <div class="card settings-info-card">
+                    <h3>Media Hero</h3>
+                    <p
+                      class="text-muted"
+                      style="font-size: 0.85rem; margin-bottom: 14px"
+                    >
+                      Foto atau video utama di bagian paling atas landing page.
+                    </p>
+                    <div class="settings-form">
+                      <div class="form-group">
+                        <label>Foto Hero Background</label>
+                        <div class="media-upload-wrap">
+                          <div class="media-preview-box" id="heroImgPreview">
+                            <img
+                              id="heroImgPreviewImg"
+                              style="
+                                display: none;
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                border-radius: 8px;
+                              "
+                              alt="Hero"
+                            />
+                            <div
+                              class="media-placeholder"
+                              id="heroImgPlaceholder"
+                            >
+                              <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <rect
+                                  x="3"
+                                  y="3"
+                                  width="18"
+                                  height="18"
+                                  rx="2"
+                                />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                              <span>Belum ada foto hero</span>
+                            </div>
+                          </div>
+                          <div class="media-actions">
+                            <label class="qris-upload-btn" for="heroImgInput"
+                              >📷 Upload Foto Hero<input
+                                type="file"
+                                id="heroImgInput"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="
+                                  handleWebMediaUpload(event, 'heroImg')
+                                "
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="heroImgRemoveBtn"
+                              onclick="removeWebMedia('heroImg')"
+                              style="display: none"
+                            >
+                              &times; Hapus
+                            </button>
+                          </div>
+                          <small class="text-muted">JPG/PNG. Maks 5MB.</small>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div class="card settings-info-card">
+                    <h3>Foto Program &amp; Tentang Kami</h3>
+                    <p
+                      class="text-muted"
+                      style="font-size: 0.85rem; margin-bottom: 14px"
+                    >
+                      Foto ini akan langsung dipakai pada card program dan
+                      section tentang kami.
+                    </p>
+                    <div class="settings-form">
+                      <div class="form-row-settings">
+                        <div class="form-group">
+                          <label>Program 1 — Private Class</label>
+                          <div class="media-upload-wrap">
+                            <div
+                              class="media-preview-box small"
+                              id="prog1Preview"
+                            >
+                              <img
+                                id="prog1Img"
+                                style="
+                                  display: none;
+                                  width: 100%;
+                                  height: 100%;
+                                  object-fit: cover;
+                                  border-radius: 6px;
+                                "
+                                alt=""
+                              />
+                              <div
+                                class="media-placeholder"
+                                id="prog1Placeholder"
+                              >
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                  />
+                                  <polyline points="21 15 16 10 5 21" /></svg
+                                ><span>Foto 1</span>
+                              </div>
+                            </div>
+                            <label class="qris-upload-btn" for="prog1Input"
+                              >Upload<input
+                                type="file"
+                                id="prog1Input"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleWebMediaUpload(event, 'prog1')"
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="prog1RemoveBtn"
+                              onclick="removeWebMedia('prog1')"
+                              style="display: none"
+                            >
+                              &times; Hapus
+                            </button>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label>Program 2 — Group Class</label>
+                          <div class="media-upload-wrap">
+                            <div
+                              class="media-preview-box small"
+                              id="prog2Preview"
+                            >
+                              <img
+                                id="prog2Img"
+                                style="
+                                  display: none;
+                                  width: 100%;
+                                  height: 100%;
+                                  object-fit: cover;
+                                  border-radius: 6px;
+                                "
+                                alt=""
+                              />
+                              <div
+                                class="media-placeholder"
+                                id="prog2Placeholder"
+                              >
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                  />
+                                  <polyline points="21 15 16 10 5 21" /></svg
+                                ><span>Foto 2</span>
+                              </div>
+                            </div>
+                            <label class="qris-upload-btn" for="prog2Input"
+                              >Upload<input
+                                type="file"
+                                id="prog2Input"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleWebMediaUpload(event, 'prog2')"
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="prog2RemoveBtn"
+                              onclick="removeWebMedia('prog2')"
+                              style="display: none"
+                            >
+                              &times; Hapus
+                            </button>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label>Program 3 — Private + Group</label>
+                          <div class="media-upload-wrap">
+                            <div
+                              class="media-preview-box small"
+                              id="prog3Preview"
+                            >
+                              <img
+                                id="prog3Img"
+                                style="
+                                  display: none;
+                                  width: 100%;
+                                  height: 100%;
+                                  object-fit: cover;
+                                  border-radius: 6px;
+                                "
+                                alt=""
+                              />
+                              <div
+                                class="media-placeholder"
+                                id="prog3Placeholder"
+                              >
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                >
+                                  <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                  />
+                                  <polyline points="21 15 16 10 5 21" /></svg
+                                ><span>Foto 3</span>
+                              </div>
+                            </div>
+                            <label class="qris-upload-btn" for="prog3Input"
+                              >Upload<input
+                                type="file"
+                                id="prog3Input"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="handleWebMediaUpload(event, 'prog3')"
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="prog3RemoveBtn"
+                              onclick="removeWebMedia('prog3')"
+                              style="display: none"
+                            >
+                              &times; Hapus
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-group" style="margin-top: 8px">
+                        <label>Foto About / Tentang Kami</label>
+                        <div class="media-upload-wrap">
+                          <div class="media-preview-box" id="aboutImgPreview">
+                            <img
+                              id="aboutImgPreviewImg"
+                              style="
+                                display: none;
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                border-radius: 8px;
+                              "
+                              alt=""
+                            />
+                            <div
+                              class="media-placeholder"
+                              id="aboutImgPlaceholder"
+                            >
+                              <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <rect
+                                  x="3"
+                                  y="3"
+                                  width="18"
+                                  height="18"
+                                  rx="2"
+                                />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" /></svg
+                              ><span>Belum ada foto</span>
+                            </div>
+                          </div>
+                          <div class="media-actions">
+                            <label class="qris-upload-btn" for="aboutImgInput"
+                              >📷 Upload Foto About<input
+                                type="file"
+                                id="aboutImgInput"
+                                accept="image/*"
+                                style="display: none"
+                                onchange="
+                                  handleWebMediaUpload(event, 'aboutImg')
+                                "
+                            /></label>
+                            <button
+                              type="button"
+                              class="qris-remove-btn"
+                              id="aboutImgRemoveBtn"
+                              onclick="removeWebMedia('aboutImg')"
+                              style="display: none"
+                            >
+                              &times; Hapus
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ▶▶ Kelompok 5: Galeri Kegiatan ▶▶ -->
+              <div class="settings-group">
+                <div class="settings-group-head">
+                  <div>
+                    <p class="settings-group-eyebrow">Kelompok 5</p>
+                    <h3>Galeri Kegiatan</h3>
+                  </div>
+                  <p>Upload foto-foto kegiatan latihan untuk ditampilkan sebagai slider di landing page. Maks 10 foto, tiap foto maks 3MB.</p>
+                </div>
+                <div class="card settings-info-card">
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+                    <h3 style="margin:0">Foto Galeri (<span id="galleryCount">0</span>/10)</h3>
+                    <label class="qris-upload-btn" for="galleryUploadInput" id="galleryUploadLabel">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      + Tambah Foto
+                      <input type="file" id="galleryUploadInput" accept="image/*" multiple style="display:none" onchange="handleGalleryUpload(event)" />
+                    </label>
+                  </div>
+                  <div id="galleryAdminGrid" class="gallery-admin-grid">
+                    <p class="text-muted" style="font-size:.85rem">Belum ada foto galeri.</p>
+                  </div>
+                  <small class="text-muted" style="display:block;margin-top:10px">Format JPG/PNG. Maks 3MB per foto. Bisa tambah caption untuk tiap foto.</small>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>

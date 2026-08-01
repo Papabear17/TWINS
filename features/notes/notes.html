@@ -1,0 +1,49 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="notesSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Catatan &amp; Evaluasi Sesi</h3>
+              <button class="admin-only" onclick="openNoteModal()">
+                + Tambah Catatan
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="noteSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari nama member atau catatan..."
+                oninput="renderNotes()"
+              />
+              <select
+                id="noteTypeFilter"
+                class="filter-select"
+                onchange="renderNotes()"
+              >
+                <option value="">Semua Tipe</option>
+                <option value="Catatan">Catatan Sesi</option>
+                <option value="Evaluasi">Evaluasi</option>
+                <option value="Progress">Progress</option>
+              </select>
+            </div>
+            <div id="noteList"></div>
+          </div>
+        </section>

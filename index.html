@@ -1,30 +1,47 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport" content="width=device-width, initial-scale=1.0"
-    />
-    <title>TWINS — Platform Pelatihan Renang</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" href="./logo.jpeg" type="image/jpeg" />
-    <link rel="stylesheet" href="style.css?v=8" />
-    <style>
-      /* Critical: hide app shell and prevent flash */
-      #appShell {
-        display: none;
-      }
-      #loginPage {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- """""""""" LOGIN PAGE """""""""" -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TWINS Dashboard</title>
+  <meta name="description" content="Admin Dashboard — Twins Swimming Club" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- ── Core CSS ── -->
+  <link rel="stylesheet" href="styles/base.css" />
+
+  <!-- ── Feature CSS ── -->
+  <link rel="stylesheet" href="features/dashboard/dashboard.css" />
+  <link rel="stylesheet" href="features/locations/locations.css" />
+  <link rel="stylesheet" href="features/members/members.css" />
+  <link rel="stylesheet" href="features/membership/membership.css" />
+  <link rel="stylesheet" href="features/payments/payments.css" />
+  <link rel="stylesheet" href="features/schedule/schedule.css" />
+  <link rel="stylesheet" href="features/notes/notes.css" />
+  <link rel="stylesheet" href="features/progress/progress.css" />
+  <link rel="stylesheet" href="features/reports/reports.css" />
+  <link rel="stylesheet" href="features/settings/settings.css" />
+  <link rel="stylesheet" href="features/orgchart/orgchart.css" />
+  <link rel="stylesheet" href="features/modals/modals.css" />
+
+  <style>
+    /* Fragment sections disembunyikan default; ditampilkan via JS (showSection) */
+    .content-section { display: none; }
+    #appShell:not(.hidden) { display: grid !important; }
+    #appShell[style*="display: none"] { display: none !important; }
+    @media (max-width: 850px) { .mobile-menu-btn { display: block !important; } }
+  </style>
+</head>
+<body>
+
+  <!-- Login Page (inline) -->
+  <div id="loginFragmentMount">
+<!-- === features/login/login.html === -->
+﻿    <!-- """""""""" LOGIN PAGE """""""""" -->
     <div id="loginPage" class="login-page">
       <div class="login-card">
         <div class="login-logo">
@@ -62,29 +79,20 @@
       </div>
     </div>
 
-    
-    <div id="firebaseLoadingOverlay" style="display:none;position:fixed;inset:0;z-index:8888;background:var(--bg,#f0f6ff);flex-direction:column;align-items:center;justify-content:center;gap:18px;">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-        <img src="./logo.jpeg" alt="TWINS" style="width:56px;height:56px;border-radius:50%;object-fit:cover;box-shadow:0 2px 12px rgba(30,144,255,0.18);" />
-        <div style="font-size:1rem;font-weight:600;color:#1e90ff;letter-spacing:.03em">Menyinkronkan data...</div>
-        <div style="font-size:.8rem;color:#888">Terhubung ke Firebase Realtime Database</div>
-      </div>
-      <div style="width:220px;height:6px;background:#e2edf8;border-radius:99px;overflow:hidden;">
-        <div id="firebaseSyncBar" style="height:100%;width:0%;background:linear-gradient(90deg,#1e90ff,#63b3ed);border-radius:99px;transition:width 0.4s ease;animation:syncPulse 1.4s ease-in-out infinite;"></div>
-      </div>
-      <!-- Skeleton cards -->
-      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-      </div>
-    </div>
+  </div>
 
-    <!-- """""""""" APP SHELL """""""""" -->
-    <div id="appShell" class="app" style="display: none">
-      <!-- ▶▶ Sidebar ▶▶ -->
-      <aside id="sidebar" class="sidebar">
+  <!-- Firebase Loading Overlay -->
+  <div id="firebaseLoadingOverlay">
+    <div class="firebase-spinner"></div>
+    <span>Memuat data dari server...</span>
+  </div>
+
+  <!-- App Shell -->
+  <div id="appShell" class="app" style="display:none;">
+    <!-- Sidebar (inline) -->
+    <div id="sidebarFragmentMount">
+<!-- === features/sidebar/sidebar.html === -->
+﻿      <aside id="sidebar" class="sidebar">
         <div class="brand">
           <div class="brand-icon">
             <img
@@ -220,9 +228,14 @@
         onclick="toggleMobileSidebar()"
       ></div>
 
-      <!-- ▶▶ Main Content ▶▶ -->
-      <main class="main-content">
-        <header class="top-header">
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header (inline) -->
+      <div id="headerFragmentMount">
+<!-- === features/header/header.html === -->
+﻿        <header class="top-header">
           <div style="display: flex; align-items: center; gap: 12px">
             <button
               id="mobileMenuBtn"
@@ -263,8 +276,13 @@
           </div>
         </header>
 
-        <!-- """" 1. DASHBOARD """" -->
-        <section id="dashboardSection" class="content-section">
+      </div>
+
+      <!-- Sections (inline) -->
+      <div id="sectionsMount">
+        <div id="sectionsFragmentMount">
+<!-- === features/dashboard/dashboard.html === -->
+﻿        <section id="dashboardSection" class="content-section">
           <!-- Notification banner -->
           <div id="notifBanner" style="display: none" class="notif-banner">
             <span id="notifText"></span>
@@ -347,9 +365,8 @@
             </div>
           </div>
         </section>
-
-        <!-- """" 2. LOKASI & SLOT """" -->
-        <section
+<!-- === features/locations/locations.html === -->
+﻿        <section
           id="locationsSection"
           class="content-section"
           style="display: none"
@@ -382,9 +399,8 @@
             <div id="locationList"></div>
           </div>
         </section>
-
-        <!-- """" 3. PENDAFTARAN MEMBER """" -->
-        <section
+<!-- === features/members/members.html === -->
+﻿        <section
           id="membersSection"
           class="content-section"
           style="display: none"
@@ -420,8 +436,8 @@
             <div id="memberList"></div>
           </div>
         </section>
-
-<!-- """" 3B. KEANGGOTAAN (MEMBERSHIP HUB) """" -->
+<!-- === features/membership/membership.html === -->
+﻿<!-- """" 3B. KEANGGOTAAN (MEMBERSHIP HUB) """" -->
         <section
           id="membershipSection"
           class="content-section"
@@ -512,9 +528,8 @@
             </div>
           </div>
         </section>
-
-        <!-- """" 4. PEMBAYARAN """" -->
-        <section
+<!-- === features/payments/payments.html === -->
+﻿        <section
           id="paymentsSection"
           class="content-section"
           style="display: none"
@@ -582,9 +597,8 @@
             <div id="paymentList"></div>
           </div>
         </section>
-
-        <!-- """" 5. JADWAL LATIHAN """" -->
-        <section
+<!-- === features/schedule/schedule.html === -->
+﻿        <section
           id="scheduleSection"
           class="content-section"
           style="display: none"
@@ -620,9 +634,8 @@
             <div id="scheduleList"></div>
           </div>
         </section>
-
-        <!-- """" 6. CATATAN & EVALUASI """" -->
-        <section
+<!-- === features/notes/notes.html === -->
+﻿        <section
           id="notesSection"
           class="content-section"
           style="display: none"
@@ -656,9 +669,8 @@
             <div id="noteList"></div>
           </div>
         </section>
-
-        <!-- """" 7A. PROGRESS MEMBER """" -->
-        <section
+<!-- === features/progress/progress.html === -->
+﻿        <section
           id="progressSection"
           class="content-section"
           style="display: none"
@@ -678,9 +690,8 @@
           </div>
           <div id="progressContent"></div>
         </section>
-
-        <!-- """" 7B. LAPORAN """" -->
-        <section
+<!-- === features/reports/reports.html === -->
+﻿        <section
           id="reportsSection"
           class="content-section"
           style="display: none"
@@ -748,9 +759,8 @@
             <div id="reportSummaryTable"></div>
           </div>
         </section>
-
-        <!-- """" 7. PENGATURAN (ADMIN ONLY) """" -->
-        <section
+<!-- === features/settings/settings.html === -->
+﻿        <section
           id="settingsSection"
           class="content-section"
           style="display: none"
@@ -1319,7 +1329,7 @@
                           </div>
                           <div class="media-actions">
                             <label class="qris-upload-btn" for="heroImgInput"
-                              >Ã°Å¸“· Upload Foto Hero<input
+                              >📷 Upload Foto Hero<input
                                 type="file"
                                 id="heroImgInput"
                                 accept="image/*"
@@ -1576,7 +1586,7 @@
                           </div>
                           <div class="media-actions">
                             <label class="qris-upload-btn" for="aboutImgInput"
-                              >Ã°Å¸“· Upload Foto About<input
+                              >📷 Upload Foto About<input
                                 type="file"
                                 id="aboutImgInput"
                                 accept="image/*"
@@ -1630,9 +1640,8 @@
             </div>
           </div>
         </section>
-
-        <!-- """" 8. STRUKTUR ORGANISASI """" -->
-        <section
+<!-- === features/orgchart/orgchart.html === -->
+﻿        <section
           id="orgchartSection"
           class="content-section"
           style="display: none"
@@ -1658,12 +1667,8 @@
             ></div>
           </div>
         </section>
-      </main>
-    </div>
-
-    <!-- """""""""" MODALS """""""""" -->
-
-    <!-- Lokasi -->
+<!-- === features/modals/modals.html === -->
+﻿    <!-- Lokasi -->
     <div
       id="locationModal"
       class="modal hidden"
@@ -2202,9 +2207,54 @@
     <!-- Toast -->
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-    <script type="module" src="../web-only/firebase-init.js?v=4"></script>
-    <script src="script.js?v=4"></script>
-  </body>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast & Confirm (global) -->
+  <div id="toast" class="toast hidden"></div>
+  <div id="confirmOverlay" class="confirm-overlay hidden">
+    <div class="confirm-card">
+      <div class="confirm-icon-wrap" id="confirmIconWrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      </div>
+      <h3 id="confirmTitle">Konfirmasi</h3>
+      <p id="confirmMessage">Yakin?</p>
+      <div class="confirm-actions">
+        <button class="confirm-btn-cancel" onclick="resolveConfirm(false)">Batal</button>
+        <button class="confirm-btn-ok" id="confirmOkBtn" onclick="resolveConfirm(true)">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Init -->
+  <script src="firebase-init.js" type="module"></script>
+
+  <!-- Core JS -->
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+
+  <!-- Feature JS -->
+  <script src="features/dashboard/dashboard.js"></script>
+  <script src="features/locations/locations.js"></script>
+  <script src="features/members/members.js"></script>
+  <script src="features/membership/membership.js"></script>
+  <script src="features/payments/payments.js"></script>
+  <script src="features/schedule/schedule.js"></script>
+  <script src="features/notes/notes.js"></script>
+  <script src="features/progress/progress.js"></script>
+  <script src="features/reports/reports.js"></script>
+  <script src="features/settings/settings.js"></script>
+  <script src="features/orgchart/orgchart.js"></script>
+  <script src="features/modals/modals.js"></script>
+
+  <!-- Render & CRUD -->
+  <script src="js/render.js"></script>
+
+  <!-- Auth & App -->
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
 </html>
-
-

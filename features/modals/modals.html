@@ -1,0 +1,553 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿    <!-- Lokasi -->
+    <div
+      id="locationModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <h3 id="locationModalTitle">Tambah Lokasi</h3>
+        <div class="form-group">
+          <label>Nama Lokasi / Cabang</label><input id="locName" />
+        </div>
+        <div class="form-group">
+          <label>Coach Pengajar</label>
+          <div
+            id="locCoachCheckboxes"
+            style="
+              border: 1px solid var(--border);
+              border-radius: var(--radius-sm);
+              overflow: hidden;
+              background: var(--surface);
+              max-height: 200px;
+              overflow-y: auto;
+            "
+          >
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Alamat Lengkap</label><input id="locAddress" />
+        </div>
+        <div class="form-group">
+          <label>Kapasitas Slot Total</label
+          ><input id="locCapacity" type="number" min="1" />
+        </div>
+        <div
+          class="form-group"
+          style="
+            background: var(--accent-soft);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+          "
+        >
+          Info: Slot terisi dihitung otomatis dari jumlah member aktif di lokasi
+          ini.
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="locStatus">
+            <option value="Aktif">Aktif</option>
+            <option value="Tutup Sementara">Tutup Sementara</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveLocation()">Simpan</button
+          ><button onclick="closeLocationModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member -->
+    <div id="memberModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeMemberModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="memberModalTitle">Daftarkan Member Baru</h3>
+        <div class="form-group">
+          <label>Nama Lengkap</label><input id="memName" />
+        </div>
+        <div class="form-group">
+          <label>Nomor HP / WhatsApp</label><input id="memPhone" />
+        </div>
+        <div class="form-group">
+          <label>Email (opsional)</label><input id="memEmail" type="email" />
+        </div>
+        <div class="form-group">
+          <label>Tanggal Lahir</label><input id="memDob" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Lokasi</label
+          ><select id="memLocation">
+            <option value="">— Pilih Lokasi —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Paket</label>
+          <select id="memPackage">
+            <!-- diisi otomatis dari state.packages -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tanggal Bergabung</label><input id="memJoinDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="memStatus">
+            <option value="Aktif">Aktif</option>
+            <option value="Tidak Aktif">Tidak Aktif</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveMember()">Daftarkan</button
+          ><button onclick="closeMemberModal()" class="secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pembayaran -->
+    <div id="paymentModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closePaymentModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="paymentModalTitle">Catat Pembayaran</h3>
+        <div class="form-group">
+          <label>Member</label
+          ><select id="payMember">
+            <option value="">— Pilih Member —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipe</label
+          ><select id="payType">
+            <option value="Pendaftaran">Pendaftaran</option>
+            <option value="Bulanan">Bulanan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Jumlah (Rp)</label
+          ><input id="payAmount" type="number" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Tanggal</label><input id="payDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Status</label
+          ><select id="payStatus">
+            <option value="Lunas">Lunas</option>
+            <option value="Menunggak">Menunggak</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Catatan (opsional)</label><input id="payNote" />
+        </div>
+        <div class="actions">
+          <button onclick="savePayment()">Simpan</button
+          ><button onclick="closePaymentModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bukti Pembayaran Preview -->
+    <div id="proofModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card proof-modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeProofModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3>Bukti Pembayaran</h3>
+        <div class="proof-modal-body">
+          <img id="proofModalImage" src="" alt="Bukti Pembayaran" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Jadwal -->
+    <div
+      id="scheduleModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeScheduleModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="scheduleModalTitle">Tambah Jadwal Latihan</h3>
+        <div class="form-group">
+          <label>Member</label
+          ><select id="schMember">
+            <option value="">— Pilih Member —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Hari</label>
+          <select id="schDay">
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+            <option value="Sabtu">Sabtu</option>
+            <option value="Minggu">Minggu</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Waktu</label><input id="schTime" type="time" />
+        </div>
+        <div class="form-group">
+          <label>Coach / Trainer</label><input id="schCoach" />
+        </div>
+        <div class="form-group">
+          <label>Tipe Latihan</label>
+          <select id="schType">
+            <option>Personal Training</option>
+            <option>Group Class</option>
+            <option>Cardio</option>
+            <option>Strength</option>
+            <option>Yoga</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveSchedule()">Simpan</button
+          ><button onclick="closeScheduleModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Catatan / Evaluasi -->
+    <div id="noteModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeNoteModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="noteModalTitle">Tambah Catatan Sesi</h3>
+        <div class="form-group">
+          <label>Member</label
+          ><select id="noteMember">
+            <option value="">— Pilih Member —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipe</label>
+          <select id="noteType">
+            <option value="Catatan">Catatan Sesi</option>
+            <option value="Evaluasi">Evaluasi</option>
+            <option value="Progress">Progress</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tanggal</label><input id="noteDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label>Skor Progress (1-10)</label
+          ><input
+            id="noteScore"
+            type="number"
+            min="1"
+            max="10"
+            placeholder="Opsional"
+          />
+        </div>
+        <div class="form-group">
+          <label>Catatan</label
+          ><textarea
+            id="noteContent"
+            rows="4"
+            placeholder="Tulis catatan atau hasil evaluasi..."
+          ></textarea>
+        </div>
+        <div class="actions">
+          <button onclick="saveNote()">Simpan</button
+          ><button onclick="closeNoteModal()" class="secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin User -->
+    <div
+      id="adminUserModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeAdminUserModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="adminUserModalTitle">Tambah Akun</h3>
+        <div class="form-group"><label>Nama</label><input id="auName" /></div>
+        <div class="form-group">
+          <label>Email</label><input id="auEmail" type="email" />
+        </div>
+        <div class="form-group">
+          <label>Password</label><input id="auPassword" type="password" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="auRole">
+            <option value="Admin">Admin</option>
+            <option value="Coach">Coach</option>
+            <option value="Manager">Manager</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="saveAdminUser()">Simpan</button
+          ><button onclick="closeAdminUserModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paket -->
+    <div id="packageModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closePackageModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="packageModalTitle">Tambah Paket</h3>
+        <div class="form-group">
+          <label>Nama Paket</label><input id="pkgName" />
+        </div>
+        <div class="form-group">
+          <label>Harga per Bulan (Rp)</label
+          ><input id="pkgPrice" type="number" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Deskripsi</label
+          ><input
+            id="pkgDesc"
+            placeholder="Contoh: 3x seminggu, akses semua kelas"
+          />
+        </div>
+        <div class="form-group">
+          <label>Status Paket</label>
+          <div class="package-status-options">
+            <label class="radio-option"><input type="radio" name="pkgStatus" value="popular" /> Populer</label>
+            <label class="radio-option"><input type="radio" name="pkgStatus" value="recommended" /> Rekomendasi</label>
+            <label class="radio-option"><input type="radio" name="pkgStatus" value="exclusive" /> Eksklusif</label>
+            <label class="radio-option"><input type="radio" name="pkgStatus" value="none" checked /> Normal</label>
+          </div>
+        </div>
+        <div class="actions">
+          <button onclick="savePackage()">Simpan</button
+          ><button onclick="closePackageModal()" class="secondary">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Org Chart -->
+    <div id="orgModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card" style="max-height: 85vh; overflow-y: auto;">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeOrgModal()"
+          aria-label="Tutup"
+        >
+          ×
+        </button>
+        <h3 id="orgModalTitle">Tambah Anggota</h3>
+        <div class="form-group">
+          <label>Nama Lengkap</label
+          ><input id="orgName" placeholder="Contoh: Dr. Ahmad Fauzi, S.Pd." />
+        </div>
+        <div class="form-group">
+          <label>Gelar / Jabatan</label>
+          <div
+            style="
+              border: 1px solid var(--border);
+              border-radius: var(--radius-sm);
+              overflow: hidden;
+              background: var(--surface);
+              max-height: 180px;
+              overflow-y: auto;
+              margin-bottom: 8px;
+            "
+          >
+            <table
+              style="width: 100%; border-collapse: collapse; font-size: 0.9rem"
+            >
+              <thead
+                style="
+                  background: var(--bg);
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <tr>
+                  <th style="padding: 8px; width: 50px; text-align: center">
+                    Pilih
+                  </th>
+                  <th style="padding: 8px; text-align: left">Jabatan</th>
+                </tr>
+              </thead>
+              <tbody id="orgTitleTableBody">
+                <!-- JS will populate -->
+              </tbody>
+            </table>
+          </div>
+          <input id="orgTitle" placeholder="Atau ketik manual di sini..." />
+        </div>
+        <div class="form-group">
+          <label>Spesialisasi</label
+          ><input id="orgSpec" placeholder="Contoh: Strength & Conditioning" />
+        </div>
+        <div class="form-group">
+          <label>Level</label>
+          <select id="orgLevel">
+            <option value="head">Head Coach (Puncak)</option>
+            <option value="senior">Senior Coach / Manager</option>
+            <option value="coach">Coach / Trainer</option>
+            <option value="staff">Staff Pendukung</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Atasan Langsung (opsional)</label>
+          <select id="orgParent">
+            <option value="">— Tidak ada (posisi puncak) —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nomor HP</label><input id="orgPhone" placeholder="Opsional" />
+        </div>
+        <div class="form-group">
+          <label>Foto Profil Pelatih</label>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div id="orgPhotoPreview" style="
+              width:72px;height:72px;border-radius:50%;
+              background:linear-gradient(135deg,#1458a3,#2280e8);
+              display:flex;align-items:center;justify-content:center;
+              font-size:1.6rem;font-weight:800;color:#fff;
+              overflow:hidden;border:3px solid var(--border);
+              flex-shrink:0;position:relative;
+            ">?</div>
+            <div style="flex:1;min-width:160px;">
+              <label for="orgPhotoInput" style="
+                display:inline-block;padding:8px 16px;
+                background:var(--primary);color:#fff;border-radius:8px;
+                cursor:pointer;font-size:0.85rem;font-weight:600;
+              ">📤 Upload Foto</label>
+              <input type="file" id="orgPhotoInput" accept="image/*" style="display:none" onchange="previewOrgPhoto(this)" />
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">JPG/PNG, maks 2MB</div>
+              <button type="button" onclick="clearOrgPhoto()" style="
+                margin-top:4px;padding:4px 10px;font-size:0.75rem;
+                background:transparent;border:1px solid var(--border);
+                border-radius:6px;cursor:pointer;color:var(--muted);
+              ">Hapus Foto</button>
+            </div>
+          </div>
+          <input type="hidden" id="orgPhotoData" />
+        </div>
+        <div class="actions">
+          <button onclick="saveOrgMember()">Simpan</button>
+          <button onclick="closeOrgModal()" class="secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div
+      id="confirmOverlay"
+      class="confirm-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="confirm-card">
+        <div class="confirm-icon-wrap" id="confirmIconWrap">
+          <svg
+            id="confirmIcon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4h6v2" />
+          </svg>
+        </div>
+        <h3 id="confirmTitle">Konfirmasi</h3>
+        <p id="confirmMessage">Yakin ingin melanjutkan?</p>
+        <div class="confirm-actions">
+          <button class="confirm-btn-cancel" onclick="resolveConfirm(false)">
+            Batal
+          </button>
+          <button
+            id="confirmOkBtn"
+            class="confirm-btn-ok"
+            onclick="resolveConfirm(true)"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>

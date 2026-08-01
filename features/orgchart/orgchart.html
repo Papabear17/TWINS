@@ -1,0 +1,41 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="orgchartSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card" style="margin-bottom: 16px">
+            <div class="section-head">
+              <div>
+                <h3 style="margin-bottom: 2px">Struktur Organisasi TWINS</h3>
+                <small class="text-muted"
+                  >Tim pelatih dan manajemen platform</small
+                >
+              </div>
+              <button class="admin-only" onclick="openOrgModal()">
+                + Tambah Anggota
+              </button>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden">
+            <div
+              id="orgChartContainer"
+              class="org-chart-wrap"
+              style="padding: 8px 20px 16px"
+            ></div>
+          </div>
+        </section>

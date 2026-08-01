@@ -1,0 +1,48 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="locationsSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card">
+            <div class="section-head">
+              <h3>Lokasi &amp; Ketersediaan Slot</h3>
+              <button class="admin-only" onclick="openLocationModal()">
+                + Tambah Lokasi
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                id="locationSearch"
+                class="filter-input"
+                type="text"
+                placeholder="Cari lokasi..."
+                oninput="renderLocations()"
+              />
+              <select
+                id="locationFilter"
+                class="filter-select"
+                onchange="renderLocations()"
+              >
+                <option value="">Semua Status</option>
+                <option value="available">Ada Slot</option>
+                <option value="full">Penuh</option>
+              </select>
+            </div>
+            <div id="locationList"></div>
+          </div>
+        </section>

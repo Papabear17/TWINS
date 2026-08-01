@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview Fragment TWINS Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="features/dashboard/dashboard.css" />
+  <link rel="stylesheet" href="features/locations/locations.css" />
+  <link rel="stylesheet" href="features/members/members.css" />
+  <link rel="stylesheet" href="features/membership/membership.css" />
+  <link rel="stylesheet" href="features/modals/modals.css" />
+  <link rel="stylesheet" href="features/notes/notes.css" />
+  <link rel="stylesheet" href="features/orgchart/orgchart.css" />
+  <link rel="stylesheet" href="features/payments/payments.css" />
+  <link rel="stylesheet" href="features/progress/progress.css" />
+  <link rel="stylesheet" href="features/reports/reports.css" />
+  <link rel="stylesheet" href="features/schedule/schedule.css" />
+  <link rel="stylesheet" href="features/settings/settings.css" />
+    <style>
+      body { font-family: 'Space Grotesk', sans-serif; margin:0; background: #f4f7fb; }
+      .preview-banner { position: sticky; top:0; z-index:999; background:#fff; border-bottom:1px solid #ddd; padding:15px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+      .preview-banner a { color:#1e90ff; text-decoration:none; font-weight:600; }
+      #sectionsMount { padding:22px; max-width:1200px; margin:0 auto; }
+      .preview-error { padding:20px; background:#fff5f5; border:1px solid #f4c1c1; border-radius:12px; color:#941b1b; }
+    </style>
+  </head>
+  <body>
+    <div class="preview-banner">
+      <div>Preview fragment: <span id="fragmentName">-</span></div>
+      <div><a href="index.html">Buka Halaman Utama</a></div>
+    </div>
+    <div id="sectionsMount"></div>
+    <script src="js/preview.js"></script>
+  </body>
+</html>

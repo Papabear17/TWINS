@@ -1,0 +1,35 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿        <section
+          id="progressSection"
+          class="content-section"
+          style="display: none"
+        >
+          <div class="card" style="margin-bottom: 16px">
+            <div class="section-head">
+              <h3>Progress Member</h3>
+              <select
+                id="progressMemberFilter"
+                class="filter-select"
+                onchange="renderProgress()"
+                style="min-width: 200px"
+              >
+                <option value="">— Pilih Member —</option>
+              </select>
+            </div>
+          </div>
+          <div id="progressContent"></div>
+        </section>

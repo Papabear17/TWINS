@@ -1,0 +1,106 @@
+<script>
+(function () {
+  if (window.top === window.self) {
+    const path = location.pathname.split('/');
+    const rootIndex = path.indexOf('web-only') >= 0 ? path.indexOf('web-only') : path.indexOf('admin-only');
+    if (rootIndex < 0) return;
+    const root = path[rootIndex];
+    const fragmentPath = path.slice(rootIndex + 1).join('/');
+    const previewPage = '/' + root + '/preview.html?fragment=' + encodeURIComponent(fragmentPath);
+    if (!location.pathname.endsWith('/preview.html')) {
+      location.replace(previewPage);
+    }
+  }
+})();
+</script>
+﻿<!-- """" 3B. KEANGGOTAAN (MEMBERSHIP HUB) """" -->
+        <section
+          id="membershipSection"
+          class="content-section"
+          style="display: none"
+        >
+          <p class="dashboard-eyebrow">Ringkasan Keanggotaan TWINS</p>
+          <div class="metrics-grid" style="margin-bottom:16px">
+            <div class="metric-card">
+              <p>Total Member</p>
+              <h2 id="msTotal">0</h2>
+              <span class="metric-change positive">Terdaftar</span>
+            </div>
+            <div class="metric-card">
+              <p>Aktif</p>
+              <h2 id="msAktif">0</h2>
+              <span class="metric-change positive">Status aktif</span>
+            </div>
+            <div class="metric-card">
+              <p>Menunggu Verifikasi</p>
+              <h2 id="msPending">0</h2>
+              <span class="metric-change negative">Perlu disetujui</span>
+            </div>
+            <div class="metric-card">
+              <p>Tidak Aktif</p>
+              <h2 id="msNonaktif">0</h2>
+              <span class="metric-change negative">Nonaktif</span>
+            </div>
+          </div>
+
+          <!-- Ringkasan Paket Membership -->
+          <div class="charts-row" style="margin-top:4px">
+            <div class="card">
+              <h3>Paket Membership</h3>
+              <div id="msPackageSummary" class="ms-package-grid">
+                <!-- JS render -->
+              </div>
+            </div>
+            <div class="card">
+              <h3>Distribusi Status</h3>
+              <div style="display:flex;align-items:center;justify-content:center;gap:28px;padding:12px 8px;min-height:180px;flex-wrap:wrap">
+                <canvas id="msStatusChart" style="width:150px;height:150px;flex-shrink:0;"></canvas>
+                <div id="msStatusLegend" style="font-size:0.85rem;min-width:100px;"></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Member per Lokasi</h3>
+              <div id="msLocationSummary">
+                <!-- JS render -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Daftar Member -->
+          <div class="card" style="margin-top:16px">
+            <div class="section-head">
+              <h3>Daftar Member</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <input
+                  id="msSearch"
+                  class="filter-input"
+                  type="text"
+                  placeholder="Cari nama atau HP..."
+                  oninput="renderMembership()"
+                  style="min-width:180px"
+                />
+                <select
+                  id="msStatusFilter"
+                  class="filter-select"
+                  onchange="renderMembership()"
+                >
+                  <option value="">Semua Status</option>
+                  <option value="Aktif">Aktif</option>
+                  <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
+                  <option value="Tidak Aktif">Tidak Aktif</option>
+                </select>
+                <select
+                  id="msPackageFilter"
+                  class="filter-select"
+                  onchange="renderMembership()"
+                >
+                  <option value="">Semua Paket</option>
+                </select>
+                <button class="admin-only" onclick="showSection('members'); openMemberModal()">+ Daftarkan Member</button>
+              </div>
+            </div>
+            <div id="msMemberList">
+              <!-- JS render -->
+            </div>
+          </div>
+        </section>
