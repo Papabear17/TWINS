@@ -182,24 +182,20 @@ function subscribeToFirebaseChanges() {
 function _handleFirebaseUpdate(remoteState, source = 'realtime') {
   if (!remoteState) return;
   const remoteTs = window.__twinsState.getSharedUpdatedAt(remoteState);
-  const localTs = window.__twinsState.getSharedUpdatedAt(window.__twinsState.state);
+  const localTs  = window.__twinsState.getSharedUpdatedAt(window.__twinsState.state);
 
+  // Remote lebih lama dari local → push local ke Firebase, jangan overwrite
   if (remoteTs < localTs) {
     const bridge = window.__twinsState.getFirebaseBridge();
     if (bridge) bridge.saveSharedState(window.__twinsState.buildSharedStatePayload()).catch(() => {});
     return;
   }
 
-  if (remoteTs === localTs) {
-    const remoteMembers = Array.isArray(remoteState.members) ? remoteState.members.length : 0;
-    const remotePayments = Array.isArray(remoteState.payments) ? remoteState.payments.length : 0;
-    const localMembers = Array.isArray(window.__twinsState.state.members) ? window.__twinsState.state.members.length : 0;
-    const localPayments = Array.isArray(window.__twinsState.state.payments) ? window.__twinsState.state.payments.length : 0;
-    if (remoteMembers === localMembers && remotePayments === localPayments) return;
-  }
+  // Timestamp sama → ini kemungkinan echo dari save kita sendiri, abaikan
+  if (remoteTs === localTs) return;
 
+  // Remote lebih baru → update local state dengan data dari server
   const nextState = window.__twinsState.mergeRemoteStateWithLocal(remoteState);
-  window.__twinsState.touchSharedState(nextState);
   window.__twinsState.state = nextState;
   window.__twinsState.normalizeStateCollections();
   window.__twinsState.persistLocalState();
