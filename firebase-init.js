@@ -46,6 +46,9 @@ window.twinsFirebase = {
 };
 window.twinsFirebaseReady = Promise.resolve(window.twinsFirebase);
 
+// Dispatch event agar non-module scripts tahu Firebase sudah siap
+window.dispatchEvent(new CustomEvent('twinsFirebaseReady', { detail: window.twinsFirebase }));
+
 isSupported().then((supported) => {
   if (supported) {
     const analytics = getAnalytics(firebaseApp);

@@ -2555,12 +2555,13 @@ body.dark .media-preview-box {
   width: 0%;
   background: linear-gradient(90deg, #1d6fc4, #60a5fa);
   border-radius: 999px;
-  animation: lwProgress 1.8s ease 0.8s forwards;
+  animation: lwProgress 1.6s ease 0.4s forwards;
 }
 
 @keyframes lwProgress {
   0%   { width: 0%; }
-  60%  { width: 70%; }
+  50%  { width: 65%; }
+  80%  { width: 90%; }
   100% { width: 100%; }
 }
 

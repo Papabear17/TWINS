@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code — TWINS Swimming Club</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e0f7f4 0%, #f0faf8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+      padding: 40px 32px 32px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .icon { font-size: 2.4rem; margin-bottom: 12px; }
+
+    .title {
+      color: #0a9e7a;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #555;
+      font-size: 0.92rem;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .qr-wrap {
+      background: #fff;
+      border: 2px dashed #c8e6e0;
+      border-radius: 16px;
+      padding: 20px;
+      display: inline-block;
+      margin-bottom: 28px;
+    }
+
+    #qrCanvas {
+      display: block;
+      width: 240px;
+      height: 240px;
+    }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: #0a9e7a;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .btn-download:hover { background: #087d62; }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: transparent;
+      color: #0a9e7a;
+      border: 1.5px solid #0a9e7a;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+      text-decoration: none;
+    }
+
+    .btn-back:hover { background: #f0faf8; }
+
+    .link-info {
+      background: #f0faf8;
+      border: 1px solid #c8e6e0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #444;
+      word-break: break-all;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      text-align: left;
+    }
+
+    .link-info svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: #0a9e7a;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🏊</div>
+    <h1 class="title">QR TWINS Swimming Club</h1>
+    <p class="subtitle">QR Code untuk mengakses website resmi<br>TWINS Swimming Club.</p>
+
+    <div class="qr-wrap">
+      <canvas id="qrCanvas"></canvas>
+    </div>
+
+    <button class="btn-download" id="btnDownload">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Unduh QR Code (PNG)
+    </button>
+
+    <a href="index.html" class="btn-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Kembali ke Dashboard
+    </a>
+
+    <div class="link-info">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span>QR mengarah ke: <strong>https://wabsitetwins.vercel.app/</strong></span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <script>
+    (function() {
+      const QR_URL = 'https://wabsitetwins.vercel.app/';
+      const canvas = document.getElementById('qrCanvas');
+
+      const qr = new QRious({
+        element: canvas,
+        value: QR_URL,
+        size: 240,
+        backgroundAlpha: 1,
+        foreground: '#000000',
+        background: '#ffffff',
+        level: 'H',
+        padding: 10
+      });
+
+      document.getElementById('btnDownload').addEventListener('click', function() {
+        const link = document.createElement('a');
+        link.download = 'QR-TWINS-Swimming-Club.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    })();
+  </script>
+</body>
+</html>

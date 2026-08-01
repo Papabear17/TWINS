@@ -986,6 +986,9 @@ function renderSettings(){
   // Render QRIS preview
   _renderQrisPreview(pcfg.qrisImageBase64 || '');
 
+  // Render QR Link Klien
+  _renderInviteQr();
+
   // Web config
   renderWebSettings();
 
@@ -1641,17 +1644,154 @@ function refreshAdminSyncStatus() {
 }
 
 /* ── Invite QR ── */
+function _renderInviteQr() {
+  const url = window.__twinsState.INVITE_LINK || 'https://wabsitetwins.vercel.app/';
+  const img = document.getElementById('inviteQrImage');
+  const placeholder = document.getElementById('inviteQrPlaceholder');
+  const container = document.getElementById('inviteQrPreview');
+
+  if (!container) return;
+
+  if (typeof QRious !== 'undefined') {
+    const oldCanvas = container.querySelector('canvas');
+    if (oldCanvas) oldCanvas.remove();
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'inviteQrCanvas';
+    canvas.style.cssText = 'display:block;margin:0 auto;border-radius:8px;max-width:180px;width:180px;height:180px;';
+    container.insertBefore(canvas, img);
+
+    new QRious({
+      element: canvas,
+      value: url,
+      size: 180,
+      backgroundAlpha: 1,
+      foreground: '#000000',
+      background: '#ffffff',
+      level: 'H',
+      padding: 6
+    });
+
+    if (img) img.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'none';
+    return;
+  }
+
+  // Fallback: img + Google Charts
+  if (img) {
+    const qrUrl = 'https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=' + encodeURIComponent(url) + '&chld=H|2';
+    img.src = qrUrl;
+    img.style.cssText = 'display:block;max-width:180px;margin:0 auto;border-radius:8px;';
+    if (placeholder) placeholder.style.display = 'none';
+    img.onerror = () => {
+      img.style.display = 'none';
+      if (placeholder) { placeholder.style.display = 'flex'; placeholder.textContent = 'Gagal memuat QR.'; }
+    };
+    return;
+  }
+
+  // Load QRious dinamis
+  if (!document.getElementById('qrious-script')) {
+    const script = document.createElement('script');
+    script.id = 'qrious-script';
+    script.src = 'https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js';
+    script.onload = () => _renderInviteQr();
+    document.head.appendChild(script);
+    if (placeholder) placeholder.textContent = 'Memuat QR...';
+  }
+}
+
 function copyInviteLink() {
   const value = window.__twinsState.INVITE_LINK || 'https://wabsitetwins.vercel.app/';
   navigator.clipboard.writeText(value).then(() => showToast('✅ Link undangan klien disalin')).catch(() => showToast('Gagal menyalin link.'));
 }
+
 function downloadInviteQr() {
   const url = window.__twinsState.INVITE_LINK || 'https://wabsitetwins.vercel.app/';
-  const qrUrl = 'https://chart.googleapis.com/chart?cht=qr&chs=600x600&chl=' + encodeURIComponent(url) + '&chld=L|2';
-  fetch(qrUrl).then(r => r.blob()).then(blob => {
-    const a = document.createElement('a'); const objUrl = URL.createObjectURL(blob);
-    a.href = objUrl; a.download = 'twins-invite-qr.png'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(objUrl);
-  }).catch(() => window.open(qrUrl, '_blank'));
+
+  // Buat QR besar (600px) khusus untuk download
+  const exportSize = 600;
+  const logoSize = exportSize * 0.22; // logo 22% dari QR
+  const logoX = (exportSize - logoSize) / 2;
+  const logoY = (exportSize - logoSize) / 2;
+
+  // Generate QR ke canvas sementara
+  const tempCanvas = document.createElement('canvas');
+  if (typeof QRious === 'undefined') {
+    showToast('QR library belum siap, coba lagi.');
+    return;
+  }
+
+  new QRious({
+    element: tempCanvas,
+    value: url,
+    size: exportSize,
+    backgroundAlpha: 1,
+    foreground: '#000000',
+    background: '#ffffff',
+    level: 'H',
+    padding: 20
+  });
+
+  // Overlay logo di tengah canvas
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = exportSize;
+  finalCanvas.height = exportSize;
+  const ctx = finalCanvas.getContext('2d');
+
+  // Gambar QR
+  ctx.drawImage(tempCanvas, 0, 0);
+
+  // Load logo lalu overlay
+  const logoImg = new Image();
+  logoImg.onload = () => {
+    // Background putih bulat di belakang logo
+    const pad = 10;
+    const rx = logoX - pad;
+    const ry = logoY - pad;
+    const rw = logoSize + pad * 2;
+    const rh = logoSize + pad * 2;
+    const radius = rw / 2; // fully rounded (circle)
+
+    ctx.save();
+    // Shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 2;
+    // Circle background
+    ctx.beginPath();
+    ctx.arc(rx + rw/2, ry + rh/2, radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.restore();
+
+    // Gambar logo dalam circle clip
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(rx + rw/2, ry + rh/2, radius - 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(logoImg, rx + 4, ry + 4, rw - 8, rh - 8);
+    ctx.restore();
+
+    // Download
+    const link = document.createElement('a');
+    link.download = 'QR-TWINS-Swimming-Club.png';
+    link.href = finalCanvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ QR Code dengan logo diunduh');
+  };
+
+  logoImg.onerror = () => {
+    // Download tanpa logo jika gagal load
+    const link = document.createElement('a');
+    link.download = 'QR-TWINS-Swimming-Club.png';
+    link.href = tempCanvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ QR Code diunduh');
+  };
+
+  logoImg.src = './logo.jpeg';
 }
 
 /* ── Notifications ── */

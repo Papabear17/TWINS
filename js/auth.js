@@ -31,6 +31,7 @@ async function doLogin() {
 
   try { sessionStorage.setItem(window.__twinsState.SESSION_KEY, JSON.stringify(user)); } catch(e) {}
 
+  // Hanya tampilkan welcome overlay saat login manual, bukan saat restore session
   showLoginWelcome(user.name, user.role, () => {
     const loginPage = document.getElementById('loginPage');
     loginPage.style.display = 'none';
@@ -44,7 +45,8 @@ async function doLogin() {
     document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('[data-section="dashboard"]')?.classList.add('active');
-    document.getElementById('dashboardSection').style.display = 'block';
+    const dashEl = document.getElementById('dashboardSection');
+    if (dashEl) dashEl.style.display = 'block';
 
     // Render ulang
     if (window.__renderAll) window.__renderAll();
@@ -83,36 +85,10 @@ function doLogout() {
   });
 }
 
-// ── Welcome Overlay ──
+// ── Welcome Overlay ── (dinonaktifkan - langsung masuk dashboard)
 function showLoginWelcome(userName, userRole, onDone) {
-  const overlay = document.createElement('div');
-  overlay.id = 'loginWelcomeOverlay';
-  overlay.innerHTML = `
-    <div class="lw-inner">
-      <div class="lw-logo-wrap">
-        <img src="./logo.jpeg" alt="TWINS" class="lw-logo" />
-        <div class="lw-ring"></div>
-      <div class="lw-greeting">Selamat Datang,</div>
-      <div class="lw-name">${userName}</div>
-      <div class="lw-role">${userRole} · Twins Swimming Club</div>
-      <div class="lw-bar-wrap"><div class="lw-bar"></div>
-    </div>
-    <div class="lw-waves">
-      <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
-        <path d="M0,50 C240,90 480,10 720,50 C960,90 1200,10 1440,50 L1440,100 L0,100 Z" fill="rgba(30,144,255,0.15)"/>
-        <path d="M0,70 C360,20 720,100 1080,50 C1260,25 1380,80 1440,70 L1440,100 L0,100 Z" fill="rgba(30,144,255,0.08)"/>
-      </svg>
-    </div>`;
-  document.body.appendChild(overlay);
-
-  setTimeout(() => {
-    overlay.style.opacity = '0';
-    overlay.style.transition = 'opacity 0.6s ease';
-    setTimeout(() => {
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      onDone();
-    }, 650);
-  }, 2200);
+  // Langsung panggil onDone tanpa animasi splash
+  onDone();
 }
 
 // ── Role UI ──

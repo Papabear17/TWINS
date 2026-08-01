@@ -93,17 +93,37 @@ function cloneStateData(data) { return JSON.parse(JSON.stringify(data)); }
 
 function mergeAppState(parsed = {}) {
   const base = cloneStateData(defaultState);
+  // Untuk array: jika parsed punya key tersebut (termasuk array kosong []),
+  // SELALU pakai parsed. Default hanya dipakai jika key tidak ada sama sekali.
+  const resolveArray = (key) => {
+    if (parsed && Object.prototype.hasOwnProperty.call(parsed, key)) {
+      return Array.isArray(parsed[key]) ? parsed[key] : (base[key] || []);
+    }
+    return base[key] || [];
+  };
+
   return {
     ...base, ...parsed,
+    // Arrays — parsed selalu menang (termasuk array kosong)
+    locations:  resolveArray('locations'),
+    members:    resolveArray('members'),
+    payments:   resolveArray('payments'),
+    schedules:  resolveArray('schedules'),
+    notes:      resolveArray('notes'),
+    packages:   resolveArray('packages'),
+    orgMembers: resolveArray('orgMembers'),
+    webGallery: resolveArray('webGallery'),
+    // Objects — merge dengan default sebagai fallback
     config:        { ...base.config,        ...(parsed.config        || {}) },
     paymentConfig: { ...base.paymentConfig, ...(parsed.paymentConfig || {}) },
     webConfig:     { ...(base.webConfig     || {}), ...(parsed.webConfig || {}) },
     webMedia:      { ...(base.webMedia      || {}), ...(parsed.webMedia || {}) },
-    webGallery:    Array.isArray(parsed.webGallery) ? parsed.webGallery : (base.webGallery || []),
+    // adminUsers — pakai parsed jika ada, fallback ke default
     adminUsers: cloneStateData(
-      Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0 ? parsed.adminUsers : base.adminUsers
+      Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
+        ? parsed.adminUsers
+        : base.adminUsers
     ),
-    orgMembers: Array.isArray(parsed.orgMembers) ? parsed.orgMembers : (base.orgMembers || [])
   };
 }
 
@@ -225,7 +245,8 @@ let firebaseStateSignature = '';
 
 // ── Export untuk digunakan modul lain ──
 window.__twinsState = {
-  state,
+  get state() { return state; },
+  set state(val) { state = val; },
   defaultState,
   STORAGE_KEY,
   THEME_KEY,
