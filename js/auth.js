@@ -224,17 +224,25 @@ async function hydrateSharedState() {
     await Promise.race([window.twinsFirebaseReady, timeoutPromise]);
     const bridge = window.__twinsState.getFirebaseBridge();
     if (!bridge) { hideOverlay(); return; }
+
     const remoteState = await Promise.race([bridge.loadSharedState(), timeoutPromise]);
     if (remoteState) {
-      const nextState = window.__twinsState.mergeRemoteStateWithLocal(remoteState);
-      if (window.__twinsState.getSharedUpdatedAt(nextState) < window.__twinsState.getSharedUpdatedAt(window.__twinsState.state)) {
+      const remoteTs = window.__twinsState.getSharedUpdatedAt(remoteState);
+      const localTs  = window.__twinsState.getSharedUpdatedAt(window.__twinsState.state);
+
+      if (remoteTs > localTs) {
+        // Firebase punya data lebih baru → gunakan Firebase, jangan campur dengan defaultState
+        const nextState = window.__twinsState.mergeRemoteStateWithLocal(remoteState);
+        window.__twinsState.state = nextState;
+        window.__twinsState.normalizeStateCollections();
+        window.__twinsState.persistLocalState();
+      } else if (remoteTs < localTs) {
+        // Local lebih baru → push ke Firebase
         window.__twinsState.saveState();
-        return;
       }
-      window.__twinsState.state = nextState;
-      window.__twinsState.normalizeStateCollections();
-      window.__twinsState.persistLocalState();
+      // remoteTs === localTs → sudah sync, tidak perlu apa-apa
     } else {
+      // Firebase kosong → push state lokal ke Firebase (seed pertama kali)
       window.__twinsState.saveState();
     }
   } catch (error) {

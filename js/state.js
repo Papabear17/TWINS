@@ -21,55 +21,18 @@ const defaultState = {
   activeSection: 'dashboard',
   sharedUpdatedAt: 0,
   config: { appName: 'Twins Swimming Club', contact: 'twinsswimmingclub@gmail.com', regFee: 100000, dueDay: 5 },
-  locations: [
-    { id: 1, name: 'Kolam Renang Bukit Dago',   address: 'Bukit Dago, Tangerang Selatan',  capacity: 30, status: 'Aktif' },
-    { id: 2, name: 'Kolam Renang Panser',        address: 'Panser, Tangerang Selatan',       capacity: 25, status: 'Aktif' },
-    { id: 3, name: 'Kolam Renang Bali Resort',   address: 'Bali Resort, Tangerang Selatan',  capacity: 20, status: 'Aktif' }
-  ],
-  members: [
-    { id: 1, name: 'Admin TWINS',  phone: '081111111111', email: 'admin@twins.id',  dob: '1990-01-15', locationId: 1, package: 'Premium',  joinDate: '2026-01-01', status: 'Aktif' },
-    { id: 2, name: 'Aqil Syafiq',  phone: '081234567890', email: 'aqil@twins.id',   dob: '1998-05-14', locationId: 1, package: 'Premium',  joinDate: '2026-06-01', status: 'Aktif' },
-    { id: 3, name: 'Bima Putra',   phone: '082345678901', email: 'bima@email.com',  dob: '2000-11-20', locationId: 1, package: 'Standard', joinDate: '2026-06-15', status: 'Aktif' },
-    { id: 4, name: 'Citra Dewi',   phone: '083456789012', email: 'citra@email.com', dob: '1995-03-08', locationId: 3, package: 'Basic',    joinDate: '2026-07-01', status: 'Aktif' },
-    { id: 5, name: 'Doni Pratama', phone: '084567890123', email: 'doni@email.com',   dob: '1990-07-25', locationId: 2, package: 'Standard', joinDate: '2026-05-10', status: 'Tidak Aktif' }
-  ],
-  payments: [
-    { id: 1, memberId: 1, type: 'Pendaftaran', amount: 100000, date: '2026-06-01', status: 'Lunas',     note: '' },
-    { id: 2, memberId: 1, type: 'Bulanan',     amount: 650000, date: '2026-06-01', status: 'Lunas',     note: 'Juni 2026' },
-    { id: 3, memberId: 1, type: 'Bulanan',     amount: 650000, date: '2026-07-01', status: 'Lunas',     note: 'Juli 2026' },
-    { id: 4, memberId: 2, type: 'Pendaftaran', amount: 100000, date: '2026-06-15', status: 'Lunas',     note: '' },
-    { id: 5, memberId: 2, type: 'Bulanan',     amount: 400000, date: '2026-06-15', status: 'Lunas',     note: 'Juni 2026' },
-    { id: 6, memberId: 2, type: 'Bulanan',     amount: 400000, date: '2026-07-15', status: 'Menunggak', note: 'Juli 2026' },
-    { id: 7, memberId: 3, type: 'Pendaftaran', amount: 100000, date: '2026-07-01', status: 'Lunas',     note: '' },
-    { id: 8, memberId: 3, type: 'Bulanan',     amount: 250000, date: '2026-07-01', status: 'Lunas',     note: 'Juli 2026' }
-  ],
-  schedules: [
-    { id: 1, memberId: 1, day: 'Senin',  time: '07:00', coach: 'Coach Rina', type: 'Personal Training' },
-    { id: 2, memberId: 1, day: 'Rabu',   time: '07:00', coach: 'Coach Rina', type: 'Strength' },
-    { id: 3, memberId: 1, day: 'Jumat',  time: '07:00', coach: 'Coach Rina', type: 'Cardio' },
-    { id: 4, memberId: 2, day: 'Selasa', time: '18:00', coach: 'Coach Dion', type: 'Group Class' },
-    { id: 5, memberId: 2, day: 'Kamis',  time: '18:00', coach: 'Coach Dion', type: 'Group Class' },
-    { id: 6, memberId: 3, day: 'Sabtu',  time: '09:00', coach: 'Coach Tari', type: 'Yoga' }
-  ],
-  notes: [
-    { id: 1, memberId: 1, type: 'Catatan',  date: '2026-07-01', score: 8, content: 'Progres squat meningkat, stamina baik.' },
-    { id: 2, memberId: 1, type: 'Evaluasi', date: '2026-07-15', score: 9, content: 'Target bulanan tercapai 90%.' },
-    { id: 3, memberId: 2, type: 'Progress', date: '2026-07-10', score: 7, content: 'Perlu fokus pada konsistensi latihan.' }
-  ],
+  locations: [],
+  members:   [],
+  payments:  [],
+  schedules: [],
+  notes:     [],
   adminUsers: [...DEMO_ACCOUNTS],
   packages: [
     { id: 1, name: 'Basic',    price: 250000, desc: '2x seminggu, akses kolam renang', status: 'none', popular: false },
     { id: 2, name: 'Standard', price: 400000, desc: '3x seminggu, akses kolam renang + kelas', status: 'recommended', popular: false },
     { id: 3, name: 'Premium',  price: 650000, desc: 'Unlimited, personal trainer', status: 'popular', popular: true }
   ],
-  orgMembers: [
-    { id: 101, name: 'Yanto',     title: 'Founder',      spec: 'Strategi Klub & Pengembangan', level: 'head',   parentId: null, phone: '081111111111' },
-    { id: 102, name: 'Aqil',      title: 'Head Coach',   spec: 'Teknik Dasar & Kompetisi',      level: 'senior', parentId: 101,  phone: '081222222222' },
-    { id: 103, name: 'Syafiq',    title: 'Ops Manager',  spec: 'Operasional Cabang',            level: 'staff',  parentId: 101,  phone: '081333333333' },
-    { id: 104, name: 'Rina',      title: 'Senior Coach', spec: 'Private Class & Anak',          level: 'coach',  parentId: 102,  phone: '081444444444' },
-    { id: 105, name: 'Dion',      title: 'Coach',        spec: 'Group Class & Endurance',       level: 'coach',  parentId: 102,  phone: '081555555555' },
-    { id: 106, name: 'Tari',      title: 'Staff Admin',  spec: 'Administrasi & Jadwal',         level: 'staff',  parentId: 103,  phone: '081666666666' }
-  ],
+  orgMembers: [],
   paymentConfig: {
     waNumber: '6281294708266',
     reassuranceTitle: 'Pembayaranmu Aman Bersama TWINS',
@@ -94,17 +57,19 @@ function cloneStateData(data) { return JSON.parse(JSON.stringify(data)); }
 function mergeAppState(parsed = {}) {
   const base = cloneStateData(defaultState);
   // Untuk array: jika parsed punya key tersebut (termasuk array kosong []),
-  // SELALU pakai parsed. Default hanya dipakai jika key tidak ada sama sekali.
+  // SELALU pakai parsed. Default hanya dipakai jika key tidak ada sama sekali di parsed.
   const resolveArray = (key) => {
     if (parsed && Object.prototype.hasOwnProperty.call(parsed, key)) {
-      return Array.isArray(parsed[key]) ? parsed[key] : (base[key] || []);
+      return Array.isArray(parsed[key]) ? parsed[key] : [];
     }
+    // Key tidak ada sama sekali di parsed → pakai default
     return base[key] || [];
   };
 
   return {
     ...base, ...parsed,
-    // Arrays — parsed selalu menang (termasuk array kosong)
+    // Arrays — parsed selalu menang, termasuk array kosong []
+    // Default HANYA dipakai kalau key benar-benar tidak ada di parsed
     locations:  resolveArray('locations'),
     members:    resolveArray('members'),
     payments:   resolveArray('payments'),
@@ -118,7 +83,7 @@ function mergeAppState(parsed = {}) {
     paymentConfig: { ...base.paymentConfig, ...(parsed.paymentConfig || {}) },
     webConfig:     { ...(base.webConfig     || {}), ...(parsed.webConfig || {}) },
     webMedia:      { ...(base.webMedia      || {}), ...(parsed.webMedia || {}) },
-    // adminUsers — pakai parsed jika ada, fallback ke default
+    // adminUsers — pakai parsed jika ada dan tidak kosong, fallback ke default
     adminUsers: cloneStateData(
       Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
         ? parsed.adminUsers
@@ -221,10 +186,17 @@ function persistLocalState() {
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) state = mergeAppState(JSON.parse(saved));
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = mergeAppState(parsed);
+    }
+    // Jika localStorage kosong, state tetap pakai defaultState (sudah di-init di atas)
+    // JANGAN fallback ke defaultState kalau localStorage kosong tapi Firebase ada data —
+    // hydrateSharedState() akan mengisi dari Firebase setelah ini
   } catch (e) { console.warn('Failed to load saved state', e); }
   normalizeStateCollections();
-  syncMemberStatusWithPayments();
+  // TIDAK jalankan syncMemberStatusWithPayments di sini —
+  // fungsi ini bisa corrupt status member saat data baru di-load dari Firebase
   firebaseStateSignature = JSON.stringify(state);
 }
 
