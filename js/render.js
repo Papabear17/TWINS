@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    TWINS - Render, CRUD, and Feature UI Functions
    Sourced from android/app/src/main/assets/public/script.js
    Preserves membership renderers and approvePayment from the prior render.js
@@ -957,7 +957,11 @@ function getWebConfigDefaults() {
     tiktok: '@twinsswimmingclub',
     statMembers: '100+',
     statCoaches: '5+',
-    statLocations: '3'
+    statLocations: '3',
+    knpTitle: 'Halaman KNP TWINS',
+    knpSubtitle: 'Konten KNP dimuat secara dinamis dari admin.',
+    knpDescription: 'Gunakan panel admin untuk mengelola konten KNP. Semua perubahan akan tampil tanpa perlu mengedit HTML.',
+    knpButtonLabel: 'Kembali ke Beranda',
   };
 }
 
@@ -1144,6 +1148,10 @@ function saveWebConfig() {
   window.__twinsState.state.webConfig.statMembers   = get('webStatMembers')   || defaults.statMembers;
   window.__twinsState.state.webConfig.statCoaches   = get('webStatCoaches')   || defaults.statCoaches;
   window.__twinsState.state.webConfig.statLocations = get('webStatLocations') || defaults.statLocations;
+  window.__twinsState.state.webConfig.knpTitle      = get('webKnpTitle')      || defaults.knpTitle;
+  window.__twinsState.state.webConfig.knpSubtitle   = get('webKnpSubtitle')   || defaults.knpSubtitle;
+  window.__twinsState.state.webConfig.knpDescription= get('webKnpDescription')|| defaults.knpDescription;
+  window.__twinsState.state.webConfig.knpButtonLabel= get('webKnpButtonLabel')|| defaults.knpButtonLabel;
   window.__twinsState.saveState();
   renderWebSettings();
   showToast('Pengaturan web disimpan');
@@ -1166,9 +1174,13 @@ function renderWebSettings() {
   set('webStatMembers',   cfg.statMembers);
   set('webStatCoaches',   cfg.statCoaches);
   set('webStatLocations', cfg.statLocations);
+  set('webKnpTitle',      cfg.knpTitle);
+  set('webKnpSubtitle',   cfg.knpSubtitle);
+  set('webKnpDescription',cfg.knpDescription);
+  set('webKnpButtonLabel',cfg.knpButtonLabel);
 
   // Render media previews (foto)
-  const mediaKeys = ['heroImg','aboutImg','prog1','prog2','prog3'];
+  const mediaKeys = ['heroImg','aboutImg','prog1','prog2','prog3','knpImg'];
   mediaKeys.forEach(key => _renderWebMediaPreview(key, (window.__twinsState.state.webMedia || {})[key] || ''));
 
   // Render galeri admin
@@ -1210,31 +1222,63 @@ function renderGalleryAdmin() {
   });
 }
 
+/* ── Kompresi gambar via Canvas sebelum simpan ke base64 ────────────
+   maxW/maxH : dimensi maksimum (aspect ratio dipertahankan)
+   quality   : kualitas JPEG 0–1 (0.70 = hemat ~60% ukuran)
+   callback  : dipanggil dengan string base64 hasil kompresi
+──────────────────────────────────────────────────────────────── */
+function compressImage(file, maxW, maxH, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+
+      // Skala proporsional agar tidak melebihi batas
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      // Background putih agar PNG transparan tidak jadi hitam saat di-JPEG
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function handleGalleryUpload(event) {
   const files = Array.from(event.target.files);
   if (!files.length) return;
-  const gallery = window.__twinsState.state.webGallery || [];
+  const gallery   = window.__twinsState.state.webGallery || [];
   const remaining = 10 - gallery.length;
   if (remaining <= 0) { showToast('Maksimum 10 foto galeri'); return; }
 
-  const toProcess = files.slice(0, remaining);
+  const toProcess = files.slice(0, remaining).filter(f => f.type.startsWith('image/'));
+  if (!toProcess.length) return;
+
   let processed = 0;
+  showToast(`Mengkompresi ${toProcess.length} foto...`);
 
   toProcess.forEach(file => {
-    if (!file.type.startsWith('image/')) { processed++; return; }
-    if (file.size > 3 * 1024 * 1024) { showToast(`${file.name} melebihi 3MB, dilewati`); processed++; return; }
-    const reader = new FileReader();
-    reader.onload = e => {
+    // Kompresi: max 900×900 px, JPEG 70% — turunkan ukuran dari ~2-3MB ke ~80-150KB
+    compressImage(file, 900, 900, 0.70, compressed => {
       if (!window.__twinsState.state.webGallery) window.__twinsState.state.webGallery = [];
-      window.__twinsState.state.webGallery.push({ src: e.target.result, caption: '' });
+      window.__twinsState.state.webGallery.push({ src: compressed, caption: '' });
       processed++;
       if (processed === toProcess.length) {
         window.__twinsState.saveState();
         renderGalleryAdmin();
-        showToast(`${toProcess.length} foto berhasil diunggah!`);
+        showToast(`${toProcess.length} foto berhasil diunggah & dikompresi!`);
       }
-    };
-    reader.readAsDataURL(file);
+    });
   });
 
   event.target.value = '';
@@ -1257,17 +1301,21 @@ function deleteGalleryItem(idx) {
 function handleWebMediaUpload(event, key) {
   const file = event.target.files[0];
   if (!file) return;
-  const maxMB = key === 'heroImg' || key === 'aboutImg' ? 5 : 3;
-  if (file.size > maxMB * 1024 * 1024) { showToast(`Ukuran melebihi ${maxMB}MB`); event.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = e => {
+  if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); event.target.value = ''; return; }
+
+  // Kompresi: hero/about max 1200px, program/knp max 900px, JPEG 80%
+  const isLarge = key === 'heroImg' || key === 'aboutImg';
+  const maxPx   = isLarge ? 1200 : 900;
+  showToast('Mengkompresi foto...');
+  compressImage(file, maxPx, maxPx, 0.80, compressed => {
     if (!window.__twinsState.state.webMedia) window.__twinsState.state.webMedia = {};
-    window.__twinsState.state.webMedia[key] = e.target.result;
+    window.__twinsState.state.webMedia[key] = compressed;
     window.__twinsState.saveState();
-    _renderWebMediaPreview(key, e.target.result);
-    showToast('Foto berhasil diunggah!');
-  };
-  reader.readAsDataURL(file);
+    _renderWebMediaPreview(key, compressed);
+    showToast('Foto berhasil diunggah & dikompresi!');
+  });
+
+  event.target.value = '';
 }
 
 function removeWebMedia(key) {
@@ -1275,16 +1323,16 @@ function removeWebMedia(key) {
   window.__twinsState.state.webMedia[key] = '';
   window.__twinsState.saveState();
   _renderWebMediaPreview(key, '');
-  const inputMap = { heroImg: 'heroImgInput', aboutImg: 'aboutImgInput', prog1: 'prog1Input', prog2: 'prog2Input', prog3: 'prog3Input' };
+  const inputMap = { heroImg: 'heroImgInput', aboutImg: 'aboutImgInput', prog1: 'prog1Input', prog2: 'prog2Input', prog3: 'prog3Input', knpImg: 'knpImgInput' };
   const inp = document.getElementById(inputMap[key]);
   if (inp) inp.value = '';
   showToast('Media dihapus');
 }
 
 function _renderWebMediaPreview(key, base64) {
-  const imgMap = { heroImg: 'heroImgPreviewImg', aboutImg: 'aboutImgPreviewImg', prog1: 'prog1Img', prog2: 'prog2Img', prog3: 'prog3Img' };
-  const phMap  = { heroImg: 'heroImgPlaceholder', aboutImg: 'aboutImgPlaceholder', prog1: 'prog1Placeholder', prog2: 'prog2Placeholder', prog3: 'prog3Placeholder' };
-  const rmMap  = { heroImg: 'heroImgRemoveBtn', aboutImg: 'aboutImgRemoveBtn', prog1: 'prog1RemoveBtn', prog2: 'prog2RemoveBtn', prog3: 'prog3RemoveBtn' };
+  const imgMap = { heroImg: 'heroImgPreviewImg', aboutImg: 'aboutImgPreviewImg', prog1: 'prog1Img', prog2: 'prog2Img', prog3: 'prog3Img', knpImg: 'knpImgPreviewImg' };
+  const phMap  = { heroImg: 'heroImgPlaceholder', aboutImg: 'aboutImgPlaceholder', prog1: 'prog1Placeholder', prog2: 'prog2Placeholder', prog3: 'prog3Placeholder', knpImg: 'knpImgPlaceholder' };
+  const rmMap  = { heroImg: 'heroImgRemoveBtn', aboutImg: 'aboutImgRemoveBtn', prog1: 'prog1RemoveBtn', prog2: 'prog2RemoveBtn', prog3: 'prog3RemoveBtn', knpImg: 'knpImgRemoveBtn' };
 
   const img = document.getElementById(imgMap[key]);
   const ph  = document.getElementById(phMap[key]);
@@ -1521,17 +1569,16 @@ function setOrgPhotoPreview(photoDataUrl) {
 
 function handleOrgPhotoUpload(event) {
   const file = event.target.files && event.target.files[0];
-  if (!file) return;
+  if (!file || !file.type.startsWith('image/')) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    window.__twinsState.state.orgPhotoDraft = reader.result;
+  // Kompresi: foto profil coach cukup max 400×400 px, JPEG 80%
+  compressImage(file, 400, 400, 0.80, compressed => {
+    window.__twinsState.state.orgPhotoDraft = compressed;
     window.__twinsState.state.orgPhotoCleared = false;
-    setOrgPhotoPreview(reader.result);
+    setOrgPhotoPreview(compressed);
     const removeButton = document.getElementById('orgPhotoRemoveButton');
     if (removeButton) removeButton.style.display = 'inline-flex';
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function openOrgModal() {
@@ -1668,14 +1715,13 @@ async function deleteOrgMember(id) {
 /* ── Org Photo Preview ── */
 function previewOrgPhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { showToast('Foto terlalu besar! Maksimal 2MB'); input.value = ''; return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('orgPhotoData').value = e.target.result;
+  if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); input.value = ''; return; }
+  // Kompresi: foto profil coach max 400×400 px, JPEG 80%
+  compressImage(file, 400, 400, 0.80, compressed => {
+    document.getElementById('orgPhotoData').value = compressed;
     const prev = document.getElementById('orgPhotoPreview');
-    if (prev) { prev.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`; prev.style.background = 'transparent'; }
-  };
-  reader.readAsDataURL(file);
+    if (prev) { prev.innerHTML = `<img src="${compressed}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`; prev.style.background = 'transparent'; }
+  });
 }
 
 /* ── Sync Status ── */

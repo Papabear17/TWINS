@@ -607,6 +607,53 @@
                   </div>
 
                   <div class="card settings-info-card">
+                    <h3>Halaman KNP</h3>
+                    <p class="text-muted" style="font-size:0.85rem;margin-bottom:14px">Isi konten halaman KNP agar dapat ditampilkan secara dinamis di route /knp.</p>
+                    <div class="settings-form">
+                      <div class="form-group">
+                        <label>Judul Halaman KNP</label>
+                        <input id="webKnpTitle" placeholder="Judul KNP" />
+                      </div>
+                      <div class="form-group">
+                        <label>Subjudul KNP</label>
+                        <input id="webKnpSubtitle" placeholder="Subjudul KNP" />
+                      </div>
+                      <div class="form-group">
+                        <label>Deskripsi KNP</label>
+                        <textarea id="webKnpDescription" rows="4" placeholder="Isi deskripsi halaman KNP..."></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label>Teks Tombol Kembali</label>
+                        <input id="webKnpButtonLabel" placeholder="Kembali ke Beranda" />
+                      </div>
+                      <div class="form-group">
+                        <label>Foto Header KNP</label>
+                        <div class="media-upload-wrap">
+                          <div class="media-preview-box" id="knpImgPreview">
+                            <img id="knpImgPreviewImg" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="KNP" />
+                            <div class="media-placeholder" id="knpImgPlaceholder">
+                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                              <span>Belum ada foto</span>
+                            </div>
+                          </div>
+                          <div class="media-actions">
+                            <label class="qris-upload-btn" for="knpImgInput">📷 Upload Foto KNP<input type="file" id="knpImgInput" accept="image/*" style="display:none" onchange="handleWebMediaUpload(event, 'knpImg')" /></label>
+                            <button type="button" class="qris-remove-btn" id="knpImgRemoveBtn" onclick="removeWebMedia('knpImg')" style="display:none">&times; Hapus</button>
+                          </div>
+                          <small class="text-muted">JPG/PNG. Maks 5MB.</small>
+                        </div>
+                      </div>
+                      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+                        <button onclick="saveWebConfig()">Simpan Konten KNP</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card settings-info-card">
                     <h3>Foto Program &amp; Tentang Kami</h3>
                     <p
                       class="text-muted"
