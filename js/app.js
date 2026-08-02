@@ -108,6 +108,14 @@ async function __initApp() {
       });
     }
 
+    // Tunggu anonymous auth selesai sebelum loadSharedState
+    // (Firebase Rules auth != null akan reject jika auth belum siap)
+    if (window.twinsFirebaseAuthReady) {
+      try { await window.twinsFirebaseAuthReady; } catch(e) {}
+    } else {
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
     // Subscribe ke Firebase
     if (window.__initAuth.currentUser() && !window.__twinsState.firebaseStateUnsubscribe) {
       window.__initAuth.subscribeToFirebaseChanges();

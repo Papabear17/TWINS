@@ -386,6 +386,13 @@ async function hydrateSharedState() {
 
   try {
     await Promise.race([window.twinsFirebaseReady, timeoutPromise]);
+
+    // Tunggu anonymous auth selesai sebelum loadSharedState
+    // (Firebase Rules auth != null akan PERMISSION_DENIED jika auth belum ready)
+    if (window.twinsFirebaseAuthReady) {
+      try { await window.twinsFirebaseAuthReady; } catch(e) {}
+    }
+
     const bridge = window.__twinsState.getFirebaseBridge();
     if (!bridge) { hideOverlay(); return; }
 

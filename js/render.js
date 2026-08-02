@@ -1281,7 +1281,7 @@ function compressImage(file, maxW, maxH, quality, callback) {
 
       // Skala proporsional agar tidak melebihi batas
       if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-      if (h > maxH) { w = Math.round(w * maxH / h); w = maxH; }
+      if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
 
       const canvas = document.createElement('canvas');
       canvas.width  = w;

@@ -51,7 +51,7 @@ window.twinsFirebaseReady = Promise.resolve(window.twinsFirebase);
 // ── Anonymous Auth ──
 // Admin juga sign in anonymously agar Firebase Rules auth != null berlaku.
 const firebaseAuth = getAuth(firebaseApp);
-signInAnonymously(firebaseAuth)
+window.twinsFirebaseAuthReady = signInAnonymously(firebaseAuth)
   .then(() => console.log('[TWINS Admin] Firebase anonymous auth OK'))
   .catch(e => console.warn('[TWINS Admin] Anonymous auth gagal:', e.message));
 
