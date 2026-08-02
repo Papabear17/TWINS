@@ -1057,24 +1057,19 @@ function renderSettings(){
 function handleQrisUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); event.target.value = ''; return; }
 
-  if (file.size > 2 * 1024 * 1024) {
-    showToast('Ukuran gambar melebihi 2MB. Pilih gambar yang lebih kecil.');
-    event.target.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64 = e.target.result;
-    // Simpan langsung ke state
+  showToast('Mengkompresi gambar QRIS...');
+  // Kompresi QRIS: max 800×800 px, JPEG 85% — sangat tajam untuk scan mesin pembaca, tapi super ringan (~50KB)
+  compressImage(file, 800, 800, 0.85, compressed => {
     if (!window.__twinsState.state.paymentConfig) window.__twinsState.state.paymentConfig = {};
-    window.__twinsState.state.paymentConfig.qrisImageBase64 = base64;
+    window.__twinsState.state.paymentConfig.qrisImageBase64 = compressed;
     window.__twinsState.saveState();
-    _renderQrisPreview(base64);
-    showToast('Gambar QRIS berhasil diunggah!');
-  };
-  reader.readAsDataURL(file);
+    _renderQrisPreview(compressed);
+    showToast('Gambar QRIS berhasil diunggah & dioptimalkan!');
+  });
+  
+  event.target.value = '';
 }
 
 function removeQrisImage() {
@@ -1268,15 +1263,15 @@ function handleGalleryUpload(event) {
   showToast(`Mengkompresi ${toProcess.length} foto...`);
 
   toProcess.forEach(file => {
-    // Kompresi: max 900×900 px, JPEG 70% — turunkan ukuran dari ~2-3MB ke ~80-150KB
-    compressImage(file, 900, 900, 0.70, compressed => {
+    // Kompresi: max 1200×1200 px, JPEG 85% — kualitas retina, tajam, ukuran hemat ~150-250KB
+    compressImage(file, 1200, 1200, 0.85, compressed => {
       if (!window.__twinsState.state.webGallery) window.__twinsState.state.webGallery = [];
       window.__twinsState.state.webGallery.push({ src: compressed, caption: '' });
       processed++;
       if (processed === toProcess.length) {
         window.__twinsState.saveState();
         renderGalleryAdmin();
-        showToast(`${toProcess.length} foto berhasil diunggah & dikompresi!`);
+        showToast(`${toProcess.length} foto berhasil diunggah & dioptimalkan!`);
       }
     });
   });
@@ -1303,16 +1298,17 @@ function handleWebMediaUpload(event, key) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); event.target.value = ''; return; }
 
-  // Kompresi: hero/about max 1200px, program/knp max 900px, JPEG 80%
+  // Kompresi: hero/about max 1600px (retina screen friendly), program/knp max 1200px, JPEG 88% (hampir tanpa degradasi visual)
   const isLarge = key === 'heroImg' || key === 'aboutImg';
-  const maxPx   = isLarge ? 1200 : 900;
+  const maxPx   = isLarge ? 1600 : 1200;
+  const quality = isLarge ? 0.88 : 0.85;
   showToast('Mengkompresi foto...');
-  compressImage(file, maxPx, maxPx, 0.80, compressed => {
+  compressImage(file, maxPx, maxPx, quality, compressed => {
     if (!window.__twinsState.state.webMedia) window.__twinsState.state.webMedia = {};
     window.__twinsState.state.webMedia[key] = compressed;
     window.__twinsState.saveState();
     _renderWebMediaPreview(key, compressed);
-    showToast('Foto berhasil diunggah & dikompresi!');
+    showToast('Foto berhasil diunggah & dioptimalkan!');
   });
 
   event.target.value = '';
@@ -1571,8 +1567,8 @@ function handleOrgPhotoUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file || !file.type.startsWith('image/')) return;
 
-  // Kompresi: foto profil coach cukup max 400×400 px, JPEG 80%
-  compressImage(file, 400, 400, 0.80, compressed => {
+  // Kompresi: foto profil coach cukup max 600×600 px, JPEG 85% (sangat jernih untuk avatar lingkaran)
+  compressImage(file, 600, 600, 0.85, compressed => {
     window.__twinsState.state.orgPhotoDraft = compressed;
     window.__twinsState.state.orgPhotoCleared = false;
     setOrgPhotoPreview(compressed);
@@ -1716,8 +1712,8 @@ async function deleteOrgMember(id) {
 function previewOrgPhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); input.value = ''; return; }
-  // Kompresi: foto profil coach max 400×400 px, JPEG 80%
-  compressImage(file, 400, 400, 0.80, compressed => {
+  // Kompresi: foto profil coach max 600×600 px, JPEG 85%
+  compressImage(file, 600, 600, 0.85, compressed => {
     document.getElementById('orgPhotoData').value = compressed;
     const prev = document.getElementById('orgPhotoPreview');
     if (prev) { prev.innerHTML = `<img src="${compressed}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`; prev.style.background = 'transparent'; }
