@@ -24,6 +24,7 @@ function render() {
   renderReports();
   renderSettings();
   renderOrgChart();
+  renderTestimonialsAdmin();
 }
 
 // ── Init ──

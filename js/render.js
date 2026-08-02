@@ -1866,7 +1866,7 @@ function checkNotifications() {
 
 /* ── Master Render ── */
 function render() {
-  applyAppInfo();
+  if (typeof applyAppInfo === 'function') applyAppInfo();
   renderDashboard();
   renderLocations();
   renderMembers();
@@ -1966,16 +1966,21 @@ function saveTestimonial() {
 
   if (!name || !text) { showToast('Nama dan isi testimoni wajib diisi'); return; }
 
-  if (!window.__twinsState.state.webTestimonials) window.__twinsState.state.webTestimonials = [];
+  if (!Array.isArray(window.__twinsState.state.webTestimonials)) {
+    window.__twinsState.state.webTestimonials = [];
+  }
 
+  const payload = { name, role, text, rating, featured };
   if (_editingTestimonialId !== null) {
-    window.__twinsState.state.webTestimonials[_editingTestimonialId] = { name, role, text, rating, featured };
+    window.__twinsState.state.webTestimonials[_editingTestimonialId] = payload;
     showToast('Testimonial diperbarui');
   } else {
-    window.__twinsState.state.webTestimonials.push({ name, role, text, rating, featured });
+    window.__twinsState.state.webTestimonials.push(payload);
     showToast('Testimonial ditambahkan');
   }
 
+  window.__twinsState.state.webTestimonials = [...window.__twinsState.state.webTestimonials];
+  window.__twinsState.state.sharedUpdatedAt = Date.now();
   window.__twinsState.saveState();
   closeTestimonialModal();
   renderTestimonialsAdmin();

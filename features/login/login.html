@@ -33,6 +33,9 @@
               type="email"
               placeholder="email@twins.id"
               autocomplete="username"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
             />
           </div>
           <div class="form-group">
@@ -42,10 +45,13 @@
               type="password"
               placeholder="********"
               autocomplete="current-password"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
             />
           </div>
           <p id="loginError" class="login-error hidden"></p>
-          <button class="login-btn" onclick="doLogin()">Masuk</button>
+          <button type="button" class="login-btn" onclick="doLogin()">Masuk</button>
         </div>
         <p class="login-hint">Hubungi admin TWINS untuk mendapatkan akses.</p>
       </div>

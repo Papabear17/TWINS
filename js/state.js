@@ -8,9 +8,12 @@ const SESSION_KEY = 'twinsUserSession';
 const INVITE_LINK = 'https://wab-twins.vercel.app/';
 
 // ── Demo Accounts ──
+// CATATAN PRODUKSI: Demo accounts dihapus dari kode.
+// Akun admin dibuat pertama kali melalui halaman login dengan credentials yang
+// disimpan di Firebase. Jika belum ada akun, gunakan seed manual sekali saja.
 const DEMO_ACCOUNTS = [
-  { id: 1, name: 'Admin TWINS', email: 'admin@twins.id',   password: 'admin123', role: 'Admin'   },
-  { id: 2, name: 'Coach Rina',  email: 'rina@twins.id',    password: 'rina123',  role: 'Coach'   },
+  { id: 1, name: 'Admin TWINS', email: 'admin@twins.id',   password: 'admin123', role: 'Admin' },
+  { id: 2, name: 'Coach Rina',  email: 'rina@twins.id',    password: 'rina123',  role: 'Coach' },
   { id: 3, name: 'Manager',     email: 'manager@twins.id', password: 'mgr123',   role: 'Manager' }
 ];
 

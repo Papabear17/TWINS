@@ -12,10 +12,19 @@ async function doLogin() {
   const pass  = document.getElementById('loginPassword').value;
   const err   = document.getElementById('loginError');
 
+  if (!email || !pass) {
+    if (err) {
+      err.textContent = 'Email dan password harus diisi.';
+      err.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const normalizedEmail = email.toLowerCase();
   const hashed = await hashPassword(pass);
-  let user = window.__twinsState.state.adminUsers.find(u => u.email === email && u.password === hashed);
+  let user = window.__twinsState.state.adminUsers.find(u => String(u.email || '').toLowerCase() === normalizedEmail && u.password === hashed);
   if (!user) {
-    user = window.__twinsState.state.adminUsers.find(u => u.email === email && u.password === pass);
+    user = window.__twinsState.state.adminUsers.find(u => String(u.email || '').toLowerCase() === normalizedEmail && u.password === pass);
     if (user && user.password.length !== 64) {
       user.password = hashed;
       window.__twinsState.persistLocalState();
@@ -28,6 +37,10 @@ async function doLogin() {
   }
   err.classList.add('hidden');
   currentUser = user;
+  if (window.__twinsState && window.__twinsState.state) {
+    window.__twinsState.state.isLoggedIn = true;
+    window.__twinsState.persistLocalState();
+  }
 
   try { sessionStorage.setItem(window.__twinsState.SESSION_KEY, JSON.stringify(user)); } catch(e) {}
 
@@ -68,6 +81,10 @@ function doLogout() {
   }).then(ok => {
     if (!ok) return;
     currentUser = null;
+    if (window.__twinsState && window.__twinsState.state) {
+      window.__twinsState.state.isLoggedIn = false;
+      window.__twinsState.persistLocalState();
+    }
     if (window.__twinsState.firebaseStateUnsubscribe) {
       window.__twinsState.firebaseStateUnsubscribe();
       window.__twinsState.firebaseStateUnsubscribe = null;
@@ -245,15 +262,24 @@ function subscribeToFirebaseChanges() {
     window.__twinsState.firebaseStateUnsubscribe();
   }
 
-  window.__twinsState.firebaseStateUnsubscribe = bridge.subscribeSharedState(
+  const unsubscribe = bridge.subscribeSharedState(
     (remoteState) => { _handleFirebaseUpdate(remoteState, 'realtime'); },
     (error) => { console.warn('Firebase realtime error:', error); }
   );
 
-  if (firebasePollingTimer) clearInterval(firebasePollingTimer);
-  firebasePollingTimer = setInterval(() => {
-    bridge.loadSharedState().then(remoteState => { _handleFirebaseUpdate(remoteState, 'poll'); }).catch(() => {});
-  }, SYNC_POLL_INTERVAL);
+  if (firebasePollingTimer) {
+    clearInterval(firebasePollingTimer);
+    firebasePollingTimer = null;
+  }
+
+  if (typeof unsubscribe === 'function') {
+    window.__twinsState.firebaseStateUnsubscribe = unsubscribe;
+  } else {
+    window.__twinsState.firebaseStateUnsubscribe = null;
+    firebasePollingTimer = setInterval(() => {
+      bridge.loadSharedState().then(remoteState => { _handleFirebaseUpdate(remoteState, 'poll'); }).catch(() => {});
+    }, SYNC_POLL_INTERVAL);
+  }
 }
 
 function _handleFirebaseUpdate(remoteState, source = 'realtime') {
