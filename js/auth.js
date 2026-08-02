@@ -6,11 +6,49 @@ let currentUser = null;
 let firebasePollingTimer = null;
 const SYNC_POLL_INTERVAL = 5000;
 
+// ── Brute Force Protection ──
+const _loginAttempts = { count: 0, lockedUntil: 0, countdownTimer: null };
+const MAX_ATTEMPTS   = 5;
+const LOCKOUT_MS     = 5 * 60 * 1000; // 5 menit
+
+function _getLoginErrorEl() { return document.getElementById('loginError'); }
+
+function _showLoginError(msg) {
+  const el = _getLoginErrorEl();
+  if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+}
+
+function _startLockoutCountdown() {
+  const btn = document.getElementById('loginBtn') || document.querySelector('button[onclick*="doLogin"]');
+  if (_loginAttempts.countdownTimer) clearInterval(_loginAttempts.countdownTimer);
+  _loginAttempts.countdownTimer = setInterval(() => {
+    const remaining = Math.ceil((_loginAttempts.lockedUntil - Date.now()) / 1000);
+    if (remaining <= 0) {
+      clearInterval(_loginAttempts.countdownTimer);
+      _loginAttempts.countdownTimer = null;
+      _loginAttempts.count = 0;
+      if (btn) { btn.disabled = false; btn.textContent = 'Masuk'; }
+      _showLoginError('Silakan coba login kembali.');
+    } else {
+      const m = Math.floor(remaining / 60), s = remaining % 60;
+      const timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      _showLoginError(`⛔ Terlalu banyak percobaan. Coba lagi dalam ${timeStr}.`);
+      if (btn) { btn.disabled = true; btn.textContent = `Tunggu ${timeStr}`; }
+    }
+  }, 1000);
+}
+
 // ── Login ──
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPassword').value;
   const err   = document.getElementById('loginError');
+
+  // Cek lockout
+  if (_loginAttempts.lockedUntil > Date.now()) {
+    _startLockoutCountdown();
+    return;
+  }
 
   if (!email || !pass) {
     if (err) {
@@ -18,6 +56,15 @@ async function doLogin() {
       err.classList.remove('hidden');
     }
     return;
+  }
+
+  // Exponential delay: 0, 1s, 2s, 4s, 8s per percobaan gagal
+  if (_loginAttempts.count > 0) {
+    const delayMs = Math.min(1000 * Math.pow(2, _loginAttempts.count - 1), 8000);
+    const btn = document.getElementById('loginBtn') || document.querySelector('button[onclick*="doLogin"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Memeriksa...'; }
+    await new Promise(r => setTimeout(r, delayMs));
+    if (btn) { btn.disabled = false; btn.textContent = 'Masuk'; }
   }
 
   const normalizedEmail = email.toLowerCase();
@@ -31,10 +78,24 @@ async function doLogin() {
     }
   }
   if (!user) {
-    err.textContent = 'Email atau password salah.';
-    err.classList.remove('hidden');
+    _loginAttempts.count++;
+    const remaining = MAX_ATTEMPTS - _loginAttempts.count;
+    if (_loginAttempts.count >= MAX_ATTEMPTS) {
+      _loginAttempts.lockedUntil = Date.now() + LOCKOUT_MS;
+      _startLockoutCountdown();
+    } else {
+      if (err) {
+        err.textContent = `Email atau password salah. ${remaining > 0 ? `(${remaining} percobaan tersisa)` : ''}`;
+        err.classList.remove('hidden');
+      }
+    }
     return;
   }
+
+  // Login berhasil — reset counter
+  _loginAttempts.count = 0;
+  _loginAttempts.lockedUntil = 0;
+
   err.classList.add('hidden');
   currentUser = user;
   if (window.__twinsState && window.__twinsState.state) {

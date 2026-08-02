@@ -10,22 +10,53 @@ function applyAppInfo() {
   document.title = appName;
 }
 
+// ── Error Boundary Helper ──
+// Jalankan fungsi render dengan aman: kalau error, tampilkan pesan di section-nya
+// sehingga section lain tetap berfungsi (tidak blank seluruh halaman).
+function safeRender(fn, sectionId) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`[TWINS] Error rendering ${sectionId || fn.name}:`, err);
+    if (sectionId) {
+      const el = document.getElementById(sectionId);
+      if (el && !el.querySelector('.render-error')) {
+        const errDiv = document.createElement('div');
+        errDiv.className = 'render-error';
+        errDiv.style.cssText = 'padding:16px;margin:12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:.85rem;';
+        errDiv.innerHTML = `⚠ Gagal memuat section ini. <button onclick="this.parentElement.remove();" style="margin-left:8px;padding:2px 8px;border:1px solid #991b1b;border-radius:4px;background:transparent;color:#991b1b;cursor:pointer;">Tutup</button>`;
+        el.prepend(errDiv);
+      }
+    }
+  }
+}
+window.safeRender = safeRender;
+
 // ── Master Render ──
 function render() {
-  applyAppInfo();
-  renderDashboard();
-  renderLocations();
-  renderMembers();
-  renderMembership();
-  renderPayments();
-  renderSchedules();
-  renderNotes();
-  renderProgress();
-  renderReports();
-  renderSettings();
-  renderOrgChart();
-  renderTestimonialsAdmin();
+  safeRender(applyAppInfo,           null);
+  safeRender(renderDashboard,        'dashboardSection');
+  safeRender(renderLocations,        'locationsSection');
+  safeRender(renderMembers,          'membersSection');
+  safeRender(renderMembership,       'membershipSection');
+  safeRender(renderPayments,         'paymentsSection');
+  safeRender(renderSchedules,        'schedulesSection');
+  safeRender(renderNotes,            'notesSection');
+  safeRender(renderProgress,         'progressSection');
+  safeRender(renderReports,          'reportsSection');
+  safeRender(renderSettings,         'settingsSection');
+  safeRender(renderOrgChart,         'orgSection');
+  safeRender(renderTestimonialsAdmin,'testimonialsSection');
 }
+
+// ── Global Error Handler — tangkap error JS yang tidak ter-catch ──
+window.onerror = function(message, source, lineno, colno, error) {
+  console.error('[TWINS] Uncaught error:', message, 'at', source, lineno);
+  return false;
+};
+window.onunhandledrejection = function(event) {
+  console.warn('[TWINS] Unhandled promise rejection:', event.reason);
+};
 
 // ── Init ──
 async function __initApp() {

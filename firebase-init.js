@@ -2,6 +2,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
 import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics.js';
 import { getDatabase, ref, get, set, onValue } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDSSVuGi1waCaxOvkyN0e24tvqgY2jaOe4',
@@ -46,8 +48,16 @@ window.twinsFirebase = {
 };
 window.twinsFirebaseReady = Promise.resolve(window.twinsFirebase);
 
+// ── Anonymous Auth ──
+// Admin juga sign in anonymously agar Firebase Rules auth != null berlaku.
+const firebaseAuth = getAuth(firebaseApp);
+signInAnonymously(firebaseAuth)
+  .then(() => console.log('[TWINS Admin] Firebase anonymous auth OK'))
+  .catch(e => console.warn('[TWINS Admin] Anonymous auth gagal:', e.message));
+
 // Dispatch event agar non-module scripts tahu Firebase sudah siap
 window.dispatchEvent(new CustomEvent('twinsFirebaseReady', { detail: window.twinsFirebase }));
+
 
 isSupported().then((supported) => {
   if (supported) {

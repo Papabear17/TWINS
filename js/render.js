@@ -405,6 +405,10 @@ function saveLocation() {
 
 async function deleteLocation(id) { const l=window.__twinsState.state.locations.find(x=>x.id===id); if(!l) return; const ok=await showConfirm({title:'Hapus Lokasi',message:`"${l.name}" akan dihapus permanen.`,okLabel:'Ya, Hapus'}); if(!ok) return; window.__twinsState.state.locations=window.__twinsState.state.locations.filter(x=>x.id!==id); window.__twinsState.saveState();render();showToast('Lokasi dihapus'); }
 
+let _memberPage = 0;
+let _paymentPage = 0;
+const PAGE_SIZE = 25;
+
 function renderMembers() {
   const list=document.getElementById('memberList'); if(!list) return;
   const search=(document.getElementById('memberSearch')?.value||'').toLowerCase();
@@ -413,29 +417,24 @@ function renderMembers() {
     .filter(m=>(!search||m.name.toLowerCase().includes(search)||m.phone.includes(search))&&(!sf||m.status===sf))
     .slice()
     .sort((a,b)=>{
-      // Terbaru (joinDate terbesar) tampil paling atas; fallback ke id terbesar
       const da = a.joinDate||'';
       const db = b.joinDate||'';
       if(db!==da) return db.localeCompare(da);
       return (b.id||0)-(a.id||0);
     });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (_memberPage >= totalPages) _memberPage = 0;
+  const pageItems = filtered.slice(_memberPage * PAGE_SIZE, (_memberPage + 1) * PAGE_SIZE);
+
   if(!filtered.length){list.innerHTML='<p class="empty-state">Tidak ada member.</p>';return;}
   list.innerHTML='';
-  filtered.forEach(m=>{
+  pageItems.forEach(m=>{
     const initials=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const proofPayment = window.__twinsState.state.payments.find(p => p.memberId === m.id && p.proofImage);
     const proofButton = proofPayment ? `<button class="mini-btn" onclick="openProofPreview(${proofPayment.id})">Bukti</button>` : '';
-
-    // Badge status dengan warna sesuai
-    const statusClass = m.status==='Aktif' ? 'completed'
-      : m.status==='Menunggu Verifikasi' ? 'waiting'
-      : 'pending';
-
-    // Tombol Setujui hanya muncul jika status Menunggu Verifikasi
-    const approveBtn = m.status==='Menunggu Verifikasi'
-      ? `<button class="mini-btn approve-btn" onclick="approveMember(${m.id})">Setujui</button>`
-      : '';
-
+    const statusClass = m.status==='Aktif' ? 'completed' : m.status==='Menunggu Verifikasi' ? 'waiting' : 'pending';
+    const approveBtn = m.status==='Menunggu Verifikasi' ? `<button class="mini-btn approve-btn" onclick="approveMember(${m.id})">Setujui</button>` : '';
     const div=document.createElement('div');div.className='item-box';
     div.innerHTML=`<div class="item-row">
       <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
@@ -450,7 +449,7 @@ function renderMembers() {
         <span class="status-pill ${statusClass}">${m.status}</span>
         ${approveBtn}
         ${proofButton}
-        <button class="mini-btn" onclick="chatMember('${(m.phone||'').replace(/'/g,'\\\'')}')">Chat</button>
+        <button class="mini-btn" onclick="chatMember('${(m.phone||'').replace(/'/g,"\\'")}')">Chat</button>
         <button class="mini-btn" onclick="editMember(${m.id})">Edit</button>
         <button class="mini-btn danger-btn" onclick="deleteMember(${m.id})">Hapus</button>
       </div>
@@ -592,11 +591,30 @@ function renderPayments(){
   const tf=document.getElementById('payTypeFilter')?.value||'';const sf=document.getElementById('payStatusFilter')?.value||'';
   const filtered=window.__twinsState.state.payments.filter(p=>(!tf||p.type===tf)&&(!sf||p.status===sf)).sort((a,b)=>b.date.localeCompare(a.date));
   if(!filtered.length){list.innerHTML='<p class="empty-state">Tidak ada pembayaran.</p>';return;}
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (_paymentPage >= totalPages) _paymentPage = 0;
+  const pageItems = filtered.slice(_paymentPage * PAGE_SIZE, (_paymentPage + 1) * PAGE_SIZE);
+
   list.innerHTML=`<table class="dashboard-table"><thead><tr><th>Member</th><th>Tipe</th><th>Jumlah</th><th>Tanggal</th><th>Status</th><th>Bukti</th><th>Catatan</th><th></th></tr></thead><tbody id="paymentTbody"></tbody></table>`;
   const tbody=document.getElementById('paymentTbody');
-  filtered.forEach(p=>{const proofCell = p.proofImage ? `<button class="mini-btn" onclick="openProofPreview(${p.id})">Lihat</button>` : '-';
+  pageItems.forEach(p=>{const proofCell = p.proofImage ? `<button class="mini-btn" onclick="openProofPreview(${p.id})">Lihat</button>` : '-';
     const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${getMemberName(p.memberId)}</strong></td><td><span class="role-badge">${p.type}</span></td><td><strong>${formatRp(p.amount)}</strong></td><td>${p.date}</td><td><span class="status-pill ${p.status==='Lunas'?'completed':'pending'}">${p.status}</span></td><td>${proofCell}</td><td><small class="text-muted">${p.note||'-'}</small></td><td><div style="display:flex;gap:6px"><button class="mini-btn" onclick="editPayment(${p.id})">Edit</button><button class="mini-btn danger-btn" onclick="deletePayment(${p.id})">Hapus</button></div></td>`;tbody.appendChild(tr);});
+
+  // Pagination controls
+  if (totalPages > 1) {
+    const pag = document.createElement('div');
+    pag.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 0;margin-top:8px;';
+    pag.innerHTML = `
+      <button class="mini-btn" ${_paymentPage===0?'disabled':''} onclick="_paymentPage--;renderPayments()">&#8249; Prev</button>
+      <span style="font-size:.85rem;color:#64748b">Halaman ${_paymentPage+1} dari ${totalPages} &bull; Total: ${filtered.length} pembayaran</span>
+      <button class="mini-btn" ${_paymentPage>=totalPages-1?'disabled':''} onclick="_paymentPage++;renderPayments()">Next &#8250;</button>
+    `;
+    list.appendChild(pag);
+  }
 }
+
 
 async function approvePayment(paymentId) {
   const state = window.__twinsState.state;
@@ -1059,18 +1077,25 @@ function handleQrisUpload(event) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); event.target.value = ''; return; }
 
-  showToast('Mengkompresi gambar QRIS...');
-  // Kompresi QRIS: max 800×800 px, JPEG 85% — sangat tajam untuk scan mesin pembaca, tapi super ringan (~50KB)
-  compressImage(file, 800, 800, 0.85, compressed => {
+  showToast('Mengompresi & mengupload QRIS ke CDN...');
+  // QRIS: max 800×800 px, JPEG 85% — tajam untuk scan, lalu upload ke Cloudinary
+  compressImage(file, 800, 800, 0.85, async compressed => {
+    let finalUrl = compressed;
+    try {
+      finalUrl = await uploadToCloudinary(compressed);
+    } catch (err) {
+      console.warn('[TWINS] Cloudinary upload gagal, simpan QRIS sebagai base64:', err);
+    }
     if (!window.__twinsState.state.paymentConfig) window.__twinsState.state.paymentConfig = {};
-    window.__twinsState.state.paymentConfig.qrisImageBase64 = compressed;
+    window.__twinsState.state.paymentConfig.qrisImageBase64 = finalUrl;
     window.__twinsState.saveState();
-    _renderQrisPreview(compressed);
-    showToast('Gambar QRIS berhasil diunggah & dioptimalkan!');
+    _renderQrisPreview(finalUrl);
+    showToast('Gambar QRIS berhasil diunggah ke CDN!');
   });
-  
+
   event.target.value = '';
 }
+
 
 function removeQrisImage() {
   if (!window.__twinsState.state.paymentConfig) window.__twinsState.state.paymentConfig = {};
@@ -1217,6 +1242,30 @@ function renderGalleryAdmin() {
   });
 }
 
+/* ── Cloudinary Upload Helper ──
+   Upload base64 ke Cloudinary CDN, kembalikan secure URL.
+   Foto tersimpan permanen di CDN global — tidak memakan kuota Firebase RTDB sama sekali.
+   Cloud: xbfuc4oj | Preset: TWINS CLUB
+──────────────────────────────────────────────────────────────── */
+const _CLOUDINARY_CLOUD  = 'xbfuc4oj';
+const _CLOUDINARY_PRESET = 'TWINS CLUB';
+const _CLOUDINARY_URL    = `https://api.cloudinary.com/v1_1/${_CLOUDINARY_CLOUD}/image/upload`;
+
+async function uploadToCloudinary(base64DataUrl) {
+  const formData = new FormData();
+  formData.append('file', base64DataUrl);
+  formData.append('upload_preset', _CLOUDINARY_PRESET);
+  formData.append('folder', 'twins');
+
+  const res = await fetch(_CLOUDINARY_URL, { method: 'POST', body: formData });
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Cloudinary upload gagal (${res.status}): ${errBody}`);
+  }
+  const data = await res.json();
+  return data.secure_url; // URL permanen CDN Cloudinary
+}
+
 /* ── Kompresi gambar via Canvas sebelum simpan ke base64 ────────────
    maxW/maxH : dimensi maksimum (aspect ratio dipertahankan)
    quality   : kualitas JPEG 0–1 (0.70 = hemat ~60% ukuran)
@@ -1232,7 +1281,7 @@ function compressImage(file, maxW, maxH, quality, callback) {
 
       // Skala proporsional agar tidak melebihi batas
       if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-      if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+      if (h > maxH) { w = Math.round(w * maxH / h); w = maxH; }
 
       const canvas = document.createElement('canvas');
       canvas.width  = w;
@@ -1260,18 +1309,26 @@ function handleGalleryUpload(event) {
   if (!toProcess.length) return;
 
   let processed = 0;
-  showToast(`Mengkompresi ${toProcess.length} foto...`);
+  showToast(`Mengompresi & mengupload ${toProcess.length} foto ke CDN...`);
 
   toProcess.forEach(file => {
-    // Kompresi: max 1200×1200 px, JPEG 85% — kualitas retina, tajam, ukuran hemat ~150-250KB
-    compressImage(file, 1200, 1200, 0.85, compressed => {
-      if (!window.__twinsState.state.webGallery) window.__twinsState.state.webGallery = [];
-      window.__twinsState.state.webGallery.push({ src: compressed, caption: '' });
+    // Kompres dulu, lalu upload ke Cloudinary CDN
+    compressImage(file, 1200, 1200, 0.85, async compressed => {
+      try {
+        const cdnUrl = await uploadToCloudinary(compressed);
+        if (!window.__twinsState.state.webGallery) window.__twinsState.state.webGallery = [];
+        window.__twinsState.state.webGallery.push({ src: cdnUrl, caption: '' });
+      } catch (err) {
+        console.warn('[TWINS] Cloudinary upload gagal, fallback ke base64:', err);
+        // Fallback: simpan base64 jika Cloudinary gagal
+        if (!window.__twinsState.state.webGallery) window.__twinsState.state.webGallery = [];
+        window.__twinsState.state.webGallery.push({ src: compressed, caption: '' });
+      }
       processed++;
       if (processed === toProcess.length) {
         window.__twinsState.saveState();
         renderGalleryAdmin();
-        showToast(`${toProcess.length} foto berhasil diunggah & dioptimalkan!`);
+        showToast(`${toProcess.length} foto berhasil diunggah ke CDN!`);
       }
     });
   });
@@ -1298,21 +1355,27 @@ function handleWebMediaUpload(event, key) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); event.target.value = ''; return; }
 
-  // Kompresi: hero/about max 1600px (retina screen friendly), program/knp max 1200px, JPEG 88% (hampir tanpa degradasi visual)
   const isLarge = key === 'heroImg' || key === 'aboutImg';
   const maxPx   = isLarge ? 1600 : 1200;
   const quality = isLarge ? 0.88 : 0.85;
-  showToast('Mengkompresi foto...');
-  compressImage(file, maxPx, maxPx, quality, compressed => {
+  showToast('Mengompresi & mengupload foto ke CDN...');
+  compressImage(file, maxPx, maxPx, quality, async compressed => {
+    let finalUrl = compressed; // fallback ke base64
+    try {
+      finalUrl = await uploadToCloudinary(compressed);
+    } catch (err) {
+      console.warn('[TWINS] Cloudinary upload gagal, fallback ke base64:', err);
+    }
     if (!window.__twinsState.state.webMedia) window.__twinsState.state.webMedia = {};
-    window.__twinsState.state.webMedia[key] = compressed;
+    window.__twinsState.state.webMedia[key] = finalUrl;
     window.__twinsState.saveState();
-    _renderWebMediaPreview(key, compressed);
-    showToast('Foto berhasil diunggah & dioptimalkan!');
+    _renderWebMediaPreview(key, finalUrl);
+    showToast('Foto berhasil diunggah ke CDN!');
   });
 
   event.target.value = '';
 }
+
 
 function removeWebMedia(key) {
   if (!window.__twinsState.state.webMedia) return;
@@ -1567,15 +1630,22 @@ function handleOrgPhotoUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file || !file.type.startsWith('image/')) return;
 
-  // Kompresi: foto profil coach cukup max 600×600 px, JPEG 85% (sangat jernih untuk avatar lingkaran)
-  compressImage(file, 600, 600, 0.85, compressed => {
-    window.__twinsState.state.orgPhotoDraft = compressed;
+  // Kompres lalu upload ke Cloudinary CDN
+  compressImage(file, 600, 600, 0.85, async compressed => {
+    let finalUrl = compressed;
+    try {
+      finalUrl = await uploadToCloudinary(compressed);
+    } catch (err) {
+      console.warn('[TWINS] Cloudinary upload gagal, fallback ke base64:', err);
+    }
+    window.__twinsState.state.orgPhotoDraft = finalUrl;
     window.__twinsState.state.orgPhotoCleared = false;
-    setOrgPhotoPreview(compressed);
+    setOrgPhotoPreview(finalUrl);
     const removeButton = document.getElementById('orgPhotoRemoveButton');
     if (removeButton) removeButton.style.display = 'inline-flex';
   });
 }
+
 
 function openOrgModal() {
   window.__twinsState.state.editingOrgId = null;
@@ -1712,13 +1782,20 @@ async function deleteOrgMember(id) {
 function previewOrgPhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar'); input.value = ''; return; }
-  // Kompresi: foto profil coach max 600×600 px, JPEG 85%
-  compressImage(file, 600, 600, 0.85, compressed => {
-    document.getElementById('orgPhotoData').value = compressed;
+  // Kompres lalu upload ke Cloudinary CDN, update preview & hidden input
+  compressImage(file, 600, 600, 0.85, async compressed => {
+    let finalUrl = compressed;
+    try {
+      finalUrl = await uploadToCloudinary(compressed);
+    } catch (err) {
+      console.warn('[TWINS] Cloudinary upload gagal, fallback ke base64:', err);
+    }
+    document.getElementById('orgPhotoData').value = finalUrl;
     const prev = document.getElementById('orgPhotoPreview');
-    if (prev) { prev.innerHTML = `<img src="${compressed}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`; prev.style.background = 'transparent'; }
+    if (prev) { prev.innerHTML = `<img src="${finalUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`; prev.style.background = 'transparent'; }
   });
 }
+
 
 /* ── Sync Status ── */
 function updateSyncStatusAdmin(statusText) {
